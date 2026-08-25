@@ -1,154 +1,161 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useState } from 'react';
+import { useAttendance } from '@/lib/hooks/useAttendance';
+import type { AttendanceRecord } from '@/lib/hooks/useAttendance';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ClipboardCheck, CheckCircle2, XCircle, Clock, AlertTriangle } from 'lucide-react';
-
-const attendanceData = [
-  { course: 'CS301 — Data Structures', total: 20, present: 17, absent: 2, late: 1, percentage: 85 },
-  { course: 'CS302 — Operating Systems', total: 18, present: 16, absent: 1, late: 1, percentage: 89 },
-  { course: 'CS303 — Computer Networks', total: 15, present: 14, absent: 0, late: 1, percentage: 93 },
-  { course: 'CS304 — Database Systems', total: 16, present: 12, absent: 3, late: 1, percentage: 75 },
-];
-
-const recentRecords = [
-  { date: 'Aug 22, 2025', course: 'CS301', status: 'present' },
-  { date: 'Aug 22, 2025', course: 'CS302', status: 'present' },
-  { date: 'Aug 21, 2025', course: 'CS301', status: 'present' },
-  { date: 'Aug 21, 2025', course: 'CS302', status: 'late' },
-  { date: 'Aug 20, 2025', course: 'CS301', status: 'present' },
-  { date: 'Aug 20, 2025', course: 'CS302', status: 'present' },
-];
-
-const statusColors: Record<string, string> = {
-  present: 'bg-green-500/10 text-green-600',
-  absent: 'bg-red-500/10 text-red-600',
-  late: 'bg-yellow-500/10 text-yellow-600',
-  excused: 'bg-blue-500/10 text-blue-600',
-};
-
-const statusIcons: Record<string, React.ReactNode> = {
-  present: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-  absent: <XCircle className="h-4 w-4 text-red-500" />,
-  late: <Clock className="h-4 w-4 text-yellow-500" />,
-};
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  Download,
+  AlertTriangle,
+  Calendar,
+  Loader2,
+  TrendingUp
+} from 'lucide-react';
 
 export default function StudentAttendancePage() {
-  const totalClasses = attendanceData.reduce((acc, c) => acc + c.total, 0);
-  const totalPresent = attendanceData.reduce((acc, c) => acc + c.present, 0);
-  const overallPercentage = Math.round((totalPresent / totalClasses) * 100);
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    new Date().toISOString().slice(0, 7)
+  );
+  
+  const { data: attendanceData, isLoading } = useAttendance();
+  const records: AttendanceRecord[] = attendanceData?.data || [];
+
+  const totalClasses = records.length;
+  const presentClasses = records.filter(r => r.status === 'present').length;
+  const absentClasses = records.filter(r => r.status === 'absent').length;
+  const lateClasses = records.filter(r => r.status === 'late').length;
+  const attendancePercentage = totalClasses > 0 ? Math.round((presentClasses / totalClasses) * 100) : 0;
+
+  const filteredRecords = records.filter(r => !selectedMonth || r.date?.startsWith(selectedMonth));
+
+  const groupedByDate: Record<string, AttendanceRecord[]> = {};
+  filteredRecords.forEach(record => {
+    const date = record.date || 'Unknown';
+    if (!groupedByDate[date]) groupedByDate[date] = [];
+    groupedByDate[date].push(record);
+  });
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">My Attendance</h1>
-        <p className="text-muted-foreground">Track your attendance across all courses.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">My Attendance</h1>
+          <p className="text-gray-600 mt-1">Track your attendance across all courses</p>
+        </div>
+        <Button variant="outline"><Download className="w-4 h-4 mr-2" />Export Report</Button>
       </div>
 
-      {/* Overall Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Overall</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{overallPercentage}%</div>
-            <Progress value={overallPercentage} className="mt-2" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Present</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{totalPresent}</div>
-            <p className="text-xs text-muted-foreground">of {totalClasses} classes</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Absent</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{attendanceData.reduce((acc, c) => acc + c.absent, 0)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Low Attendance?</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {overallPercentage < 75 ? (
-              <div className="flex items-center gap-2 text-yellow-600">
-                <AlertTriangle className="h-5 w-5" />
-                <span className="text-sm font-medium">Warning</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle2 className="h-5 w-5" />
-                <span className="text-sm font-medium">Good Standing</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="hover:shadow-md transition-shadow"><CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-100 rounded-lg"><CheckCircle className="w-5 h-5 text-green-600" /></div>
+            <div><p className="text-sm text-gray-500">Present</p><p className="text-2xl font-bold text-gray-900">{presentClasses}</p></div>
+          </div>
+        </CardContent></Card>
+        <Card className="hover:shadow-md transition-shadow"><CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-100 rounded-lg"><XCircle className="w-5 h-5 text-red-600" /></div>
+            <div><p className="text-sm text-gray-500">Absent</p><p className="text-2xl font-bold text-gray-900">{absentClasses}</p></div>
+          </div>
+        </CardContent></Card>
+        <Card className="hover:shadow-md transition-shadow"><CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-yellow-100 rounded-lg"><Clock className="w-5 h-5 text-yellow-600" /></div>
+            <div><p className="text-sm text-gray-500">Late</p><p className="text-2xl font-bold text-gray-900">{lateClasses}</p></div>
+          </div>
+        </CardContent></Card>
+        <Card className="hover:shadow-md transition-shadow"><CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg"><TrendingUp className="w-5 h-5 text-blue-600" /></div>
+            <div><p className="text-sm text-gray-500">Overall</p><p className="text-2xl font-bold text-gray-900">{attendancePercentage}%</p></div>
+          </div>
+        </CardContent></Card>
       </div>
 
-      {/* Course-wise Attendance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Course-wise Attendance</CardTitle>
-          <CardDescription>Attendance breakdown by course</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {attendanceData.map((course) => (
-              <div key={course.course}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{course.course}</span>
-                  <Badge variant={course.percentage >= 75 ? 'secondary' : 'destructive'} className={
-                    course.percentage >= 75 ? 'bg-green-500/10 text-green-600' : ''
-                  }>
-                    {course.percentage}%
-                  </Badge>
-                </div>
-                <Progress value={course.percentage} className="h-2" />
-                <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                  <span>Present: {course.present}</span>
-                  <span>Absent: {course.absent}</span>
-                  <span>Late: {course.late}</span>
-                  <span>Total: {course.total}</span>
-                </div>
-              </div>
-            ))}
+      <Card><CardContent className="p-4">
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Attendance Progress</span>
+            <span className="font-medium">{attendancePercentage}%</span>
           </div>
-        </CardContent>
-      </Card>
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div
+              className={`h-3 rounded-full transition-all ${attendancePercentage >= 75 ? 'bg-green-500' : attendancePercentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+              style={{ width: `${attendancePercentage}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>0%</span>
+            <span className="text-yellow-600">60% Warning</span>
+            <span className="text-green-600">75% Required</span>
+            <span>100%</span>
+          </div>
+        </div>
+        {attendancePercentage < 75 && totalClasses > 0 && (
+          <div className="mt-3 p-3 bg-yellow-50 rounded-lg flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-yellow-600" />
+            <p className="text-sm text-yellow-700">Your attendance is below the minimum required (75%).</p>
+          </div>
+        )}
+      </CardContent></Card>
 
-      {/* Recent Records */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Recent Records</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {recentRecords.map((record, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {statusIcons[record.status]}
-                  <div>
-                    <p className="text-sm font-medium">{record.course}</p>
-                    <p className="text-xs text-muted-foreground">{record.date}</p>
-                  </div>
-                </div>
-                <Badge variant="secondary" className={statusColors[record.status]}>
-                  {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                </Badge>
-              </div>
-            ))}
+      <Card><CardContent className="p-4">
+        <div className="flex items-center gap-4">
+          <Calendar className="w-5 h-5 text-gray-400" />
+          <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-48" />
+          <span className="text-sm text-gray-500">Showing {filteredRecords.length} records</span>
+        </div>
+      </CardContent></Card>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+      ) : filteredRecords.length === 0 ? (
+        <Card><CardContent className="py-12">
+          <div className="text-center">
+            <CheckCircle className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Records Found</h3>
+            <p className="text-gray-500">{selectedMonth ? 'No attendance records for this month.' : 'No attendance records yet.'}</p>
           </div>
-        </CardContent>
-      </Card>
+        </CardContent></Card>
+      ) : (
+        <div className="space-y-4">
+          {Object.entries(groupedByDate).map(([date, dayRecords]) => (
+            <Card key={date}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-600">
+                  {new Date(date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {dayRecords.map((record) => (
+                    <div key={record.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${record.status === 'present' ? 'bg-green-100' : record.status === 'absent' ? 'bg-red-100' : 'bg-yellow-100'}`}>
+                          {record.status === 'present' ? <CheckCircle className="w-4 h-4 text-green-600" /> : record.status === 'absent' ? <XCircle className="w-4 h-4 text-red-600" /> : <Clock className="w-4 h-4 text-yellow-600" />}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{record.course_code || 'Class'}</p>
+                          <p className="text-sm text-gray-500">{record.remarks || 'Scheduled'}</p>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className={record.status === 'present' ? 'bg-green-50 text-green-700 border-green-200' : record.status === 'absent' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}>
+                        {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

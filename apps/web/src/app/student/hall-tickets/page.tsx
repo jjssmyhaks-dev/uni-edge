@@ -1,96 +1,123 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { useRegularExams } from '@/lib/hooks/useRegularExams';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ticket, Download, Calendar, Clock, MapPin, Printer } from 'lucide-react';
-
-const hallTickets = [
-  { exam: 'CS301 — Data Structures', date: 'Dec 10, 2025', time: '9:00 AM', room: 'Room 101', seat: 15, ticketNumber: 'CSES3-00015', issued: true },
-  { exam: 'CS302 — Operating Systems', date: 'Dec 12, 2025', time: '2:00 PM', room: 'Room 102', seat: 22, ticketNumber: 'CSES3-00022', issued: true },
-  { exam: 'CS303 — Computer Networks', date: 'Dec 15, 2025', time: '9:00 AM', room: 'TBD', seat: 0, ticketNumber: '—', issued: false },
-];
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+  Download, 
+  Search, 
+  Calendar, 
+  Clock, 
+  MapPin,
+  User,
+  FileText,
+  Loader2,
+  Printer,
+  QrCode
+} from 'lucide-react';
 
 export default function StudentHallTicketsPage() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const { data: examsData, isLoading } = useRegularExams();
+  const exams = examsData?.data || [];
+
+  const filteredTickets = exams.filter(exam => 
+    (exam.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Hall Tickets</h1>
-          <p className="text-muted-foreground">Download your exam hall tickets and admit cards.</p>
+          <h1 className="text-2xl font-bold text-gray-900">My Hall Tickets</h1>
+          <p className="text-gray-600 mt-1">Download and print your exam hall tickets</p>
         </div>
+        <Button variant="outline"><Printer className="w-4 h-4 mr-2" />Print All</Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Tickets</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{hallTickets.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Available</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{hallTickets.filter(t => t.issued).length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{hallTickets.filter(t => !t.issued).length}</div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card><CardContent className="p-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input placeholder="Search hall tickets..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+        </div>
+      </CardContent></Card>
 
-      {/* Hall Tickets */}
-      <div className="space-y-4">
-        {hallTickets.map((ticket, i) => (
-          <Card key={i} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`flex items-center justify-center w-14 h-14 rounded-xl ${ticket.issued ? 'bg-green-500/10 text-green-600' : 'bg-yellow-500/10 text-yellow-600'}`}>
-                    <Ticket className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">{ticket.exam}</h3>
-                    <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> {ticket.date}</span>
-                      <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {ticket.time}</span>
-                      <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {ticket.room}{ticket.seat ? `, Seat ${ticket.seat}` : ''}</span>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+      ) : filteredTickets.length === 0 ? (
+        <Card><CardContent className="py-12">
+          <div className="text-center">
+            <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Hall Tickets Found</h3>
+            <p className="text-gray-500">{searchTerm ? 'No hall tickets match your search.' : 'No hall tickets available yet.'}</p>
+          </div>
+        </CardContent></Card>
+      ) : (
+        <div className="space-y-4">
+          {filteredTickets.map((ticket) => (
+            <Card key={ticket.id} className="hover:shadow-md transition-shadow overflow-hidden">
+              <div className="border-l-4 border-blue-500">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-blue-100 rounded-lg"><FileText className="w-5 h-5 text-blue-600" /></div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 text-lg">{ticket.name}</h3>
+                          <p className="text-sm text-gray-500">{ticket.course_code || 'Exam'}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <div><p className="text-xs text-gray-400">Date</p><p className="font-medium">{ticket.exam_date ? new Date(ticket.exam_date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' }) : 'TBA'}</p></div>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Clock className="w-4 h-4 text-gray-400" />
+                          <div><p className="text-xs text-gray-400">Time</p><p className="font-medium">{ticket.exam_time || '10:00 AM'}</p></div>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <MapPin className="w-4 h-4 text-gray-400" />
+                          <div><p className="text-xs text-gray-400">Duration</p><p className="font-medium">{ticket.duration_minutes || 120} min</p></div>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <User className="w-4 h-4 text-gray-400" />
+                          <div><p className="text-xs text-gray-400">Status</p><p className="font-medium">{ticket.status || 'Scheduled'}</p></div>
+                        </div>
+                      </div>
                     </div>
-                    {ticket.issued && (
-                      <p className="mt-1 text-xs font-mono text-muted-foreground">Ticket: {ticket.ticketNumber}</p>
-                    )}
+                    <div className="flex flex-col items-end gap-3">
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Available</Badge>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm"><QrCode className="w-4 h-4 mr-1" />QR Code</Button>
+                        <Button size="sm"><Download className="w-4 h-4 mr-1" />Download</Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {ticket.issued ? (
-                    <>
-                      <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4 mr-1" />
-                        Download
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Printer className="h-4 w-4" />
-                      </Button>
-                    </>
-                  ) : (
-                    <Badge variant="secondary" className="text-xs">Not Yet Issued</Badge>
-                  )}
-                </div>
+                </CardContent>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {!isLoading && filteredTickets.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-sm font-medium text-gray-600">Important Instructions</CardTitle></CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li className="flex items-start gap-2"><span className="text-blue-600 mt-1">•</span>Print this hall ticket on A4 paper</li>
+              <li className="flex items-start gap-2"><span className="text-blue-600 mt-1">•</span>Carry a valid photo ID (Aadhaar/Passport/College ID) along with the hall ticket</li>
+              <li className="flex items-start gap-2"><span className="text-blue-600 mt-1">•</span>Arrive at the exam center at least 30 minutes before the scheduled time</li>
+              <li className="flex items-start gap-2"><span className="text-blue-600 mt-1">•</span>Electronic devices (phones, calculators, smartwatches) are strictly prohibited</li>
+              <li className="flex items-start gap-2"><span className="text-blue-600 mt-1">•</span>Contact the exam cell immediately if you notice any discrepancy in the hall ticket</li>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

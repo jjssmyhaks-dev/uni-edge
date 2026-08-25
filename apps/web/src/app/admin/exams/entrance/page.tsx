@@ -1,91 +1,117 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@clerk/nextjs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DataTable, ColumnDef } from '@/components/data-table/DataTable';
-import { StatusBadge } from '@/components/shared/StatusBadge';
-import { formatDate } from '@/lib/utils';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { useEntranceExams, useLockExam, usePublishExamResults } from '@/lib/hooks';
+import { ClipboardList, Plus, Calendar, Clock, Eye, Lock, CheckCircle2 } from 'lucide-react';
 
-interface Exam {
-  id: string;
-  name: string;
-  exam_date: string | null;
-  mode: string | null;
-  total_marks: number | null;
-  status: string;
-  admission_cycles?: { academic_year: string; programs?: { name: string } };
-}
-
-const columns: ColumnDef<Exam>[] = [
-  { id: 'name', header: 'Exam Name', accessorKey: 'name', sortable: true },
-  {
-    id: 'program',
-    header: 'Program',
-    sortable: false,
-    accessorFn: (row) => row.admission_cycles?.programs?.name || '—',
-  },
-  {
-    id: 'date',
-    header: 'Date',
-    accessorKey: 'exam_date',
-    sortable: true,
-    accessorFn: (row) => formatDate(row.exam_date || '—'),
-  },
-  { id: 'mode', header: 'Mode', accessorKey: 'mode', sortable: true, accessorFn: (row) => row.mode ? row.mode.charAt(0).toUpperCase() + row.mode.slice(1) : '—' },
-  { id: 'marks', header: 'Total Marks', accessorKey: 'total_marks', sortable: true },
-  { id: 'status', header: 'Status', sortable: true, accessorFn: (row) => <StatusBadge status={row.status} /> },
-];
+const statusColors: Record<string, string> = {
+  draft: 'bg-gray-500/10 text-gray-600',
+  under_review: 'bg-yellow-500/10 text-yellow-600',
+  locked: 'bg-blue-500/10 text-blue-600',
+  completed: 'bg-green-500/10 text-green-600',
+};
 
 export default function EntranceExamsPage() {
-  const router = useRouter();
-  const { getToken } = useAuth();
+  const { data: examsData, isLoading, error } = useEntranceExams();
+  const lockExam = useLockExam();
+  const publishResults = usePublishExamResults();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['entrance-exams'],
-    queryFn: async () => {
-      const token = await getToken();
-      const res = await fetch(`${process.env.NEXT_PUBLIC_EXPRESS_API_URL}/api/v1/entrance-exams`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Failed to fetch');
-      return res.json() as Promise<{ data: Exam[] }>;
-    },
-  });
+  const exams = examsData?.data || [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Button variant="ghost" size="sm" onClick={() => router.push('/admin/exams')}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-3xl font-bold tracking-tight">Entrance Exams</h1>
-          </div>
-          <p className="text-muted-foreground">Create and manage entrance examinations.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Entrance Exams</h1>
+          <p className="text-muted-foreground">Manage entrance examinations for admission.</p>
         </div>
-        <Button asChild>
-          <Link href="/admin/exams/entrance/new">
-            <Plus className="h-4 w-4" />
+        <Link href="/admin/exams/entrance/new">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
             New Exam
-          </Link>
-        </Button>
+          </Button>
+        </Link>
       </div>
 
-      <DataTable
-        data={(data?.data as any) || []}
-        columns={columns}
-        loading={isLoading}
-        searchable
-        searchPlaceholder="Search exams..."
-        searchKeys={['name']}
-        onRowClick={(row) => router.push(`/admin/exams/entrance/${row.id}`)}
-        emptyMessage="No entrance exams created yet."
-      />
+      {/* Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Exams</CardTitle></CardHeader>
+          <CardContent><div className="text-2xl font-bold">{exams.length}</div></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Draft</CardTitle></CardHeader>
+          <CardContent><div className="text-2xl font-bold text-gray-600">{exams.filter(e => e.status === 'draft').length}</div></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Under Review</CardTitle></CardHeader>
+          <CardContent><div className="text-2xl font-bold text-yellow-600">{exams.filter(e => e.status === 'under_review').length}</div></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Completed</CardTitle></CardHeader>
+          <CardContent><div className="text-2xl font-bold text-green-600">{exams.filter(e => e.status === 'completed').length}</div></CardContent>
+        </Card>
+      </div>
+
+      {/* Exams List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">All Entrance Exams</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-destructive">Failed to load exams.</div>
+          ) : exams.length === 0 ? (
+            <EmptyState title="No entrance exams" description="Create your first entrance exam to start admissions." icon={<ClipboardList className="h-8 w-8 text-muted-foreground" />} action={{ label: 'Create Exam', onClick: () => window.location.href = '/admin/exams/entrance/new' }} />
+          ) : (
+            <div className="space-y-3">
+              {exams.map((exam) => (
+                <div key={exam.id} className="flex items-center justify-between rounded-lg border p-4 hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600">
+                      <ClipboardList className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{exam.name}</h3>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        {exam.exam_date && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {exam.exam_date}</span>}
+                        {exam.duration_minutes && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {exam.duration_minutes} min</span>}
+                        {exam.mode && <span>{exam.mode}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className={statusColors[exam.status] || ''}>
+                      {exam.status.replace('_', ' ')}
+                    </Badge>
+                    <Link href={`/admin/exams/entrance/${exam.id}`}>
+                      <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                    </Link>
+                    {exam.status === 'under_review' && (
+                      <Button variant="ghost" size="sm" onClick={() => lockExam.mutate(exam.id)} disabled={lockExam.isPending}>
+                        <Lock className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {exam.status === 'completed' && (
+                      <Button variant="ghost" size="sm" onClick={() => publishResults.mutate(exam.id)} disabled={publishResults.isPending}>
+                        <CheckCircle2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

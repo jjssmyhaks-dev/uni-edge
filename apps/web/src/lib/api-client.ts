@@ -1,17 +1,42 @@
+/**
+ * Client-side API helper for browser (Client Components).
+ *
+ * Clerk session tokens are fetched via a `getToken` callback passed
+ * from the `useAuth()` hook.  The token is sent as a Bearer header
+ * so the Express API's authMiddleware can verify it.
+ */
+
 const API_URL = process.env.NEXT_PUBLIC_EXPRESS_API_URL || 'http://localhost:4001';
 
+// Module-level token getter — set once by the Providers component
+let _getToken: (() => Promise<string | null>) | null = null;
+
 /**
- * Make an unauthenticated request from the browser (Client Components).
- * Clerk session tokens are not available in 'use client' modules.
- * The Express API should verify the JWT from the Authorization header if needed,
- * or this client can be extended to pass a token from a client-side Clerk hook.
+ * Register the Clerk `getToken` function so all apiClient calls
+ * automatically include the user's JWT.
+ * Call this once in a top-level provider (e.g. AuthTokenProvider).
  */
+export function registerTokenGetter(getToken: () => Promise<string | null>) {
+  _getToken = getToken;
+}
+
 async function clientFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
   const headers = new Headers(options.headers);
-  headers.set('Content-Type', 'application/json');
+
+  // Attach Clerk JWT if available
+  if (_getToken) {
+    const token = await _getToken();
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+  }
+
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
 
   const response = await fetch(`${API_URL}${path}`, {
     ...options,

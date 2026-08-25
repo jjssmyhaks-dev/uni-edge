@@ -5,16 +5,16 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  Users,
-  GraduationCap,
   ClipboardList,
-  FileText,
   Bell,
   Calendar,
   TrendingUp,
   TrendingDown,
   Clock,
   ArrowUpRight,
+  Users,
+  GraduationCap,
+  FileText,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -27,18 +27,19 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
+import { useDashboardStats } from '@/lib/hooks/useDashboardStats';
 import type { UserRole } from '@uni-edge/types';
 
-const monthlyData = [
-  { month: 'Jan', students: 120, applications: 45, exams: 8 },
-  { month: 'Feb', students: 135, applications: 62, exams: 12 },
-  { month: 'Mar', students: 148, applications: 78, exams: 10 },
-  { month: 'Apr', students: 162, applications: 95, exams: 15 },
-  { month: 'May', students: 180, applications: 110, exams: 18 },
-  { month: 'Jun', students: 195, applications: 88, exams: 22 },
+const fallbackEnrollment = [
+  { month: 'Jan', count: 10 },
+  { month: 'Feb', count: 15 },
+  { month: 'Mar', count: 22 },
+  { month: 'Apr', count: 30 },
+  { month: 'May', count: 35 },
+  { month: 'Jun', count: 42 },
 ];
 
-const attendanceData = [
+const fallbackAttendance = [
   { day: 'Mon', rate: 92 },
   { day: 'Tue', rate: 88 },
   { day: 'Wed', rate: 95 },
@@ -47,26 +48,17 @@ const attendanceData = [
   { day: 'Sat', rate: 78 },
 ];
 
-const recentActivity = [
-  { action: 'New application received', detail: 'B.Tech Computer Science', time: '2 min ago' },
-  { action: 'Exam results published', detail: 'Semester 4 — Mathematics', time: '1 hour ago' },
-  { action: 'Student enrollment confirmed', detail: 'Rahul Sharma — Roll #2024CS015', time: '3 hours ago' },
-  { action: 'Notice published', detail: 'Mid-semester exam schedule', time: '5 hours ago' },
-  { action: 'Attendance marked', detail: 'B.Tech CS — Section A', time: 'Yesterday' },
-];
-
-const upcomingExams = [
-  { name: 'Mid-Term — Data Structures', date: 'Sep 12, 2026', time: '10:00 AM', students: 68 },
-  { name: 'Mid-Term — Operating Systems', date: 'Sep 14, 2026', time: '2:00 PM', students: 65 },
-  { name: 'End-Term — Engineering Math', date: 'Sep 22, 2026', time: '9:00 AM', students: 120 },
-];
-
 export default function AdminDashboardPage() {
   const { user } = useUser();
-  const role = (user?.publicMetadata?.role as UserRole) || 'staff';
+  const { data: statsData, isLoading } = useDashboardStats();
+  const stats = statsData?.data;
+
   const displayName = user?.firstName || user?.lastName
     ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
     : 'Admin';
+
+  const enrollmentTrend = stats?.enrollmentTrend?.length ? stats.enrollmentTrend : fallbackEnrollment;
+  const attendanceTrend = stats?.attendanceTrend?.length ? stats.attendanceTrend : fallbackAttendance;
 
   return (
     <div className="space-y-6">
@@ -99,43 +91,64 @@ export default function AdminDashboardPage() {
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: 'Total Students', value: '195', change: '+12%', trend: 'up' as const, subtitle: 'vs last month' },
-          { title: 'Active Programs', value: '12', change: '+2', trend: 'up' as const, subtitle: 'across departments' },
-          { title: 'Applications', value: '88', change: '-8%', trend: 'down' as const, subtitle: 'this cycle' },
-          { title: 'Upcoming Exams', value: '6', change: '', trend: 'up' as const, subtitle: 'next 30 days' },
+          {
+            title: 'Total Students',
+            value: isLoading ? '—' : String(stats?.totalStudents ?? 0),
+            icon: <Users className="h-4 w-4" />,
+            change: stats?.studentsThisMonth ? `+${stats.studentsThisMonth} this month` : '',
+            trend: 'up' as const,
+          },
+          {
+            title: 'Active Programs',
+            value: isLoading ? '—' : String(stats?.activePrograms ?? 0),
+            icon: <GraduationCap className="h-4 w-4" />,
+            change: 'Across departments',
+            trend: 'up' as const,
+          },
+          {
+            title: 'Applications',
+            value: isLoading ? '—' : String(stats?.totalApplications ?? 0),
+            icon: <FileText className="h-4 w-4" />,
+            change: stats?.pendingReview ? `${stats.pendingReview} pending review` : 'No applications yet',
+            trend: 'up' as const,
+          },
+          {
+            title: 'Upcoming Exams',
+            value: isLoading ? '—' : String(stats?.upcomingExamCount ?? 0),
+            icon: <Calendar className="h-4 w-4" />,
+            change: 'Next 30 days',
+            trend: 'up' as const,
+          },
         ].map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+              <span className="text-muted-foreground">{stat.icon}</span>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                {stat.trend === 'up' ? (
-                  <TrendingUp className="h-3 w-3 text-emerald-500" />
-                ) : (
-                  <TrendingDown className="h-3 w-3 text-red-500" />
-                )}
-                <span className={stat.trend === 'up' ? 'text-emerald-500' : 'text-red-500'}>{stat.change}</span>
-                <span className="text-muted-foreground">{stat.subtitle}</span>
-              </p>
+              {stat.change && (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" />
+                  {stat.change}
+                </p>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Charts Row */}
+      {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-7">
-        {/* Enrollment Trend */}
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle className="text-sm font-medium">Enrollment Trend</CardTitle>
-            <CardDescription>Monthly students and applications</CardDescription>
+            <CardDescription>Student enrollment over the last 6 months</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyData}>
+                <AreaChart data={enrollmentTrend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="month" className="text-xs" tickLine={false} axisLine={false} />
                   <YAxis className="text-xs" tickLine={false} axisLine={false} />
@@ -149,19 +162,11 @@ export default function AdminDashboardPage() {
                   />
                   <Area
                     type="monotone"
-                    dataKey="students"
+                    dataKey="count"
                     stroke="#1e293b"
                     fill="#1e293b"
                     fillOpacity={0.08}
                     strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="applications"
-                    stroke="#6366f1"
-                    fill="#6366f1"
-                    fillOpacity={0.05}
-                    strokeWidth={1.5}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -169,7 +174,6 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Weekly Attendance */}
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle className="text-sm font-medium">Weekly Attendance</CardTitle>
@@ -178,7 +182,7 @@ export default function AdminDashboardPage() {
           <CardContent>
             <div className="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={attendanceData}>
+                <BarChart data={attendanceTrend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="day" className="text-xs" tickLine={false} axisLine={false} />
                   <YAxis className="text-xs" tickLine={false} axisLine={false} domain={[60, 100]} />
@@ -201,7 +205,6 @@ export default function AdminDashboardPage() {
 
       {/* Bottom Row */}
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Upcoming Exams */}
         <Card className="lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -216,46 +219,53 @@ export default function AdminDashboardPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
-            {upcomingExams.map((exam) => (
-              <div key={exam.name} className="flex items-start gap-3 rounded-lg border p-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded bg-muted shrink-0">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+            {stats?.upcomingExams?.length ? (
+              stats.upcomingExams.map((exam) => (
+                <div key={exam.name} className="flex items-start gap-3 rounded-lg border p-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded bg-muted shrink-0">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{exam.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {new Date(exam.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{exam.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {exam.date} · {exam.time} · {exam.students} students
-                  </p>
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-6 text-sm text-muted-foreground">
+                No upcoming exams
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
         <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-              <CardDescription className="text-xs">Latest actions across the platform</CardDescription>
-            </div>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Quick Links</CardTitle>
+            <CardDescription className="text-xs">Common admin tasks</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-0">
-            {recentActivity.map((activity, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 py-3 border-b last:border-0"
-              >
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted shrink-0">
-                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{activity.action}</p>
-                  <p className="text-xs text-muted-foreground truncate">{activity.detail}</p>
-                </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
-              </div>
-            ))}
+          <CardContent>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Create Exam', href: '/admin/exams/entrance/new', icon: <ClipboardList className="h-4 w-4" /> },
+                { label: 'Manage Programs', href: '/admin/programs', icon: <GraduationCap className="h-4 w-4" /> },
+                { label: 'Mark Attendance', href: '/admin/attendance', icon: <Calendar className="h-4 w-4" /> },
+                { label: 'Post Notice', href: '/admin/notices', icon: <Bell className="h-4 w-4" /> },
+                { label: 'Review Applications', href: '/admin/applications', icon: <FileText className="h-4 w-4" /> },
+                { label: 'Proctoring', href: '/admin/exams/proctoring', icon: <Clock className="h-4 w-4" /> },
+              ].map((action) => (
+                <Link
+                  key={action.label}
+                  href={action.href}
+                  className="flex items-center gap-2 rounded-lg border border-border/60 p-3 text-sm font-medium hover:bg-muted/50 transition-colors"
+                >
+                  <span className="text-muted-foreground">{action.icon}</span>
+                  {action.label}
+                </Link>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>

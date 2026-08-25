@@ -1,0 +1,68 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { UserButton } from '@clerk/nextjs';
+import { cn } from '@/lib/utils';
+import {
+  LayoutDashboard,
+  FileText,
+  Upload,
+  Bell,
+  CheckCircle2,
+  GraduationCap,
+  Clock,
+} from 'lucide-react';
+
+const navItems = [
+  { label: 'Dashboard', href: '/applicant/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+  { label: 'My Application', href: '/applicant/application', icon: <FileText className="h-5 w-5" /> },
+  { label: 'Documents', href: '/applicant/documents', icon: <Upload className="h-5 w-5" /> },
+  { label: 'Status Tracker', href: '/applicant/status', icon: <Clock className="h-5 w-5" /> },
+  { label: 'Notices', href: '/applicant/notices', icon: <Bell className="h-5 w-5" /> },
+];
+
+export function ApplicantLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  return (
+    <div className="flex h-screen">
+      <aside className="flex w-64 flex-col border-r bg-card">
+        <div className="flex h-16 items-center gap-2 px-4 border-b">
+          <GraduationCap className="h-6 w-6 text-primary" />
+          <div>
+            <span className="text-lg font-bold text-primary">Uni-Edge</span>
+            <span className="ml-2 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Applicant</span>
+          </div>
+        </div>
+        <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
+          {navItems.map((item) => {
+            const isActive = item.href === '/applicant/dashboard'
+              ? pathname === '/applicant/dashboard'
+              : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                )}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="border-t p-4">
+          <UserButton  />
+        </div>
+      </aside>
+
+      <main className="flex-1 overflow-y-auto p-6 bg-muted/30">{children}</main>
+    </div>
+  );
+}

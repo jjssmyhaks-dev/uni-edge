@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { apiClient } from '@/lib/api-client';
 
 export interface RegularExam {
   id: string;
@@ -30,14 +30,14 @@ export function useRegularExams(params?: { program_id?: string; term?: string; s
 
   return useQuery({
     queryKey: ['regular-exams', params],
-    queryFn: () => api.get<{ data: RegularExam[] }>(`/api/v1/regular-exams${query}`),
+    queryFn: () => apiClient.get<{ data: RegularExam[] }>(`/api/v1/regular-exams${query}`),
   });
 }
 
 export function useRegularExam(id: string) {
   return useQuery({
     queryKey: ['regular-exams', id],
-    queryFn: () => api.get<{ data: RegularExam }>(`/api/v1/regular-exams/${id}`),
+    queryFn: () => apiClient.get<{ data: RegularExam }>(`/api/v1/regular-exams/${id}`),
     enabled: !!id,
   });
 }
@@ -46,7 +46,7 @@ export function useCreateRegularExam() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
-      api.post<{ data: RegularExam }>('/api/v1/regular-exams', data),
+      apiClient.post<{ data: RegularExam }>('/api/v1/regular-exams', data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['regular-exams'] }),
   });
 }
@@ -55,7 +55,7 @@ export function useUpdateExamStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
-      api.post<{ data: RegularExam }>(`/api/v1/regular-exams/${id}/status`, { status }),
+      apiClient.post<{ data: RegularExam }>(`/api/v1/regular-exams/${id}/status`, { status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['regular-exams'] }),
   });
 }
@@ -64,7 +64,7 @@ export function useGenerateHallTickets() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (examId: string) =>
-      api.post<{ data: { count: number } }>(`/api/v1/regular-exams/${examId}/hall-tickets`, {}),
+      apiClient.post<{ data: { count: number } }>(`/api/v1/regular-exams/${examId}/hall-tickets`, {}),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hall-tickets'] }),
   });
 }
@@ -73,7 +73,7 @@ export function useBulkUploadResults() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ examId, results }: { examId: string; results: Array<{ enrollment_number: string; marks_obtained: number }> }) =>
-      api.post<{ data: { count: number } }>(`/api/v1/regular-exams/${examId}/results/bulk`, { results }),
+      apiClient.post<{ data: { count: number } }>(`/api/v1/regular-exams/${examId}/results/bulk`, { results }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['regular-exam-results'] }),
   });
 }

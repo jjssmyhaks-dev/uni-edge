@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { apiClient } from '@/lib/api-client';
 
 export interface Notice {
   id: string;
@@ -24,7 +24,7 @@ export function useNotices(params?: { status?: string; target_audience?: string 
 
   return useQuery({
     queryKey: ['notices', params],
-    queryFn: () => api.get<{ data: Notice[] }>(`/api/v1/notices${query}`),
+    queryFn: () => apiClient.get<{ data: Notice[] }>(`/api/v1/notices${query}`),
   });
 }
 
@@ -32,7 +32,7 @@ export function useCreateNotice() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { title: string; content: string; target_audience: string; publish_immediately?: boolean }) =>
-      api.post<{ data: Notice }>('/api/v1/notices', data),
+      apiClient.post<{ data: Notice }>('/api/v1/notices', data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notices'] }),
   });
 }
@@ -41,7 +41,7 @@ export function useUpdateNotice() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }: { id: string; title?: string; content?: string; status?: string }) =>
-      api.patch<{ data: Notice }>(`/api/v1/notices/${id}`, data),
+      apiClient.patch<{ data: Notice }>(`/api/v1/notices/${id}`, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notices'] }),
   });
 }
@@ -49,7 +49,7 @@ export function useUpdateNotice() {
 export function useDeleteNotice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/api/v1/notices/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/api/v1/notices/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notices'] }),
   });
 }

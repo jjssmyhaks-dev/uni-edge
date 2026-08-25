@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { apiClient } from '@/lib/api-client';
 
 export interface DocumentRequest {
   id: string;
@@ -25,7 +25,7 @@ export function useDocumentRequests(params?: { status?: string; student_id?: str
 
   return useQuery({
     queryKey: ['document-requests', params],
-    queryFn: () => api.get<{ data: DocumentRequest[] }>(`/api/v1/document-requests${query}`),
+    queryFn: () => apiClient.get<{ data: DocumentRequest[] }>(`/api/v1/document-requests${query}`),
   });
 }
 
@@ -33,7 +33,7 @@ export function useCreateDocumentRequest() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { student_id: string; request_type: string; custom_type?: string; remarks?: string }) =>
-      api.post<{ data: DocumentRequest }>('/api/v1/document-requests', data),
+      apiClient.post<{ data: DocumentRequest }>('/api/v1/document-requests', data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['document-requests'] }),
   });
 }
@@ -42,7 +42,7 @@ export function useUpdateDocumentRequestStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, status, remarks }: { id: string; status: string; remarks?: string }) =>
-      api.patch<{ data: DocumentRequest }>(`/api/v1/document-requests/${id}`, { status, remarks }),
+      apiClient.patch<{ data: DocumentRequest }>(`/api/v1/document-requests/${id}`, { status, remarks }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['document-requests'] }),
   });
 }

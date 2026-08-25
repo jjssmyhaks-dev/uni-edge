@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { apiClient } from '@/lib/api-client';
 
 export interface EntranceExam {
   id: string;
@@ -28,14 +28,14 @@ export function useEntranceExams(params?: { cycle_id?: string; status?: string }
 
   return useQuery({
     queryKey: ['entrance-exams', params],
-    queryFn: () => api.get<{ data: EntranceExam[] }>(`/api/v1/entrance-exams${query}`),
+    queryFn: () => apiClient.get<{ data: EntranceExam[] }>(`/api/v1/entrance-exams${query}`),
   });
 }
 
 export function useEntranceExam(id: string) {
   return useQuery({
     queryKey: ['entrance-exams', id],
-    queryFn: () => api.get<{ data: EntranceExam }>(`/api/v1/entrance-exams/${id}`),
+    queryFn: () => apiClient.get<{ data: EntranceExam }>(`/api/v1/entrance-exams/${id}`),
     enabled: !!id,
   });
 }
@@ -44,7 +44,7 @@ export function useCreateEntranceExam() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
-      api.post<{ data: EntranceExam }>('/api/v1/entrance-exams', data),
+      apiClient.post<{ data: EntranceExam }>('/api/v1/entrance-exams', data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['entrance-exams'] }),
   });
 }
@@ -53,7 +53,7 @@ export function useLockExam() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      api.post<{ data: EntranceExam }>(`/api/v1/entrance-exams/${id}/lock`, {}),
+      apiClient.post<{ data: EntranceExam }>(`/api/v1/entrance-exams/${id}/lock`, {}),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['entrance-exams'] }),
   });
 }
@@ -62,7 +62,7 @@ export function usePublishExamResults() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      api.post<{ data: { message: string } }>(`/api/v1/entrance-exams/${id}/publish-results`, {}),
+      apiClient.post<{ data: { message: string } }>(`/api/v1/entrance-exams/${id}/publish-results`, {}),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['entrance-exams'] }),
   });
 }

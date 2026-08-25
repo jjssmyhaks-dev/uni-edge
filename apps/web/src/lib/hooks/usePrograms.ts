@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { apiClient } from '@/lib/api-client';
 
 export interface Program {
   id: string;
@@ -20,7 +20,7 @@ export interface Program {
 export function usePrograms() {
   return useQuery({
     queryKey: ['programs'],
-    queryFn: () => api.get<{ data: Program[] }>('/api/v1/programs'),
+    queryFn: () => apiClient.get<{ data: Program[] }>('/api/v1/programs'),
   });
 }
 
@@ -28,7 +28,7 @@ export function useCreateProgram() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
-      api.post<{ data: Program }>('/api/v1/programs', data),
+      apiClient.post<{ data: Program }>('/api/v1/programs', data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['programs'] }),
   });
 }
@@ -37,7 +37,7 @@ export function useUpdateProgram() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }: { id: string } & Record<string, unknown>) =>
-      api.patch<{ data: Program }>(`/api/v1/programs/${id}`, data),
+      apiClient.patch<{ data: Program }>(`/api/v1/programs/${id}`, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['programs'] }),
   });
 }

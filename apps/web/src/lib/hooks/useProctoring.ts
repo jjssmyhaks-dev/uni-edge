@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { apiClient } from '@/lib/api-client';
 
 export interface ProctoringSession {
   id: string;
@@ -38,14 +38,14 @@ export function useProctoringSessions(params?: { exam_id?: string; status?: stri
 
   return useQuery({
     queryKey: ['proctoring-sessions', params],
-    queryFn: () => api.get<{ data: ProctoringSession[] }>(`/api/v1/proctoring${query}`),
+    queryFn: () => apiClient.get<{ data: ProctoringSession[] }>(`/api/v1/proctoring${query}`),
   });
 }
 
 export function useProctoringStats() {
   return useQuery({
     queryKey: ['proctoring-stats'],
-    queryFn: () => api.get<{ data: ProctoringStats }>('/api/v1/proctoring/stats'),
+    queryFn: () => apiClient.get<{ data: ProctoringStats }>('/api/v1/proctoring/stats'),
   });
 }
 
@@ -53,7 +53,7 @@ export function useReviewProctoringSession() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, review_status, reviewer_notes }: { id: string; review_status: string; reviewer_notes?: string }) =>
-      api.post<{ data: ProctoringSession }>(`/api/v1/proctoring/${id}/review`, { review_status, reviewer_notes }),
+      apiClient.post<{ data: ProctoringSession }>(`/api/v1/proctoring/${id}/review`, { review_status, reviewer_notes }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proctoring-sessions'] }),
   });
 }
@@ -67,7 +67,7 @@ export function useFlaggedEvents(params?: { session_id?: string; flag_type?: str
 
   return useQuery({
     queryKey: ['flagged-events', params],
-    queryFn: () => api.get<{ data: Array<{ id: string; flag_type: string; severity: number; review_status: string; timestamp: string }> }>(`/api/v1/proctoring/flags${query}`),
+    queryFn: () => apiClient.get<{ data: Array<{ id: string; flag_type: string; severity: number; review_status: string; timestamp: string }> }>(`/api/v1/proctoring/flags${query}`),
   });
 }
 
@@ -75,7 +75,7 @@ export function useReviewFlag() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, review_status, reviewer_notes }: { id: string; review_status: string; reviewer_notes?: string }) =>
-      api.patch<{ data: { id: string; review_status: string } }>(`/api/v1/proctoring/flags/${id}`, { review_status, reviewer_notes }),
+      apiClient.patch<{ data: { id: string; review_status: string } }>(`/api/v1/proctoring/flags/${id}`, { review_status, reviewer_notes }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['flagged-events'] }),
   });
 }

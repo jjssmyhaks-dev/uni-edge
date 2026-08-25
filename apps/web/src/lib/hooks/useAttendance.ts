@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { apiClient } from '@/lib/api-client';
 
 export interface AttendanceRecord {
   id: string;
@@ -33,14 +33,14 @@ export function useAttendance(params?: { program_id?: string; course_code?: stri
 
   return useQuery({
     queryKey: ['attendance', params],
-    queryFn: () => api.get<{ data: AttendanceRecord[] }>(`/api/v1/attendance${query}`),
+    queryFn: () => apiClient.get<{ data: AttendanceRecord[] }>(`/api/v1/attendance${query}`),
   });
 }
 
 export function useAttendanceSummary(studentId: string) {
   return useQuery({
     queryKey: ['attendance-summary', studentId],
-    queryFn: () => api.get<{ data: AttendanceSummary }>(`/api/v1/attendance/summary/${studentId}`),
+    queryFn: () => apiClient.get<{ data: AttendanceSummary }>(`/api/v1/attendance/summary/${studentId}`),
     enabled: !!studentId,
   });
 }
@@ -49,7 +49,7 @@ export function useMarkAttendance() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { student_id: string; program_id: string; course_code?: string; date: string; status: string; remarks?: string }) =>
-      api.post<{ data: AttendanceRecord }>('/api/v1/attendance', data),
+      apiClient.post<{ data: AttendanceRecord }>('/api/v1/attendance', data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attendance'] }),
   });
 }
@@ -58,7 +58,7 @@ export function useBulkMarkAttendance() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { records: Array<{ student_id: string; program_id: string; course_code?: string; date: string; status: string; remarks?: string }> }) =>
-      api.post<{ data: AttendanceRecord[] }>('/api/v1/attendance/bulk', data),
+      apiClient.post<{ data: AttendanceRecord[] }>('/api/v1/attendance/bulk', data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attendance'] }),
   });
 }

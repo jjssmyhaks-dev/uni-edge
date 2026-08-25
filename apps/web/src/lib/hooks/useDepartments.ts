@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { apiClient } from '@/lib/api-client';
 
 export interface Department {
   id: string;
@@ -14,7 +14,7 @@ export interface Department {
 export function useDepartments() {
   return useQuery({
     queryKey: ['departments'],
-    queryFn: () => api.get<{ data: Department[] }>('/api/v1/departments'),
+    queryFn: () => apiClient.get<{ data: Department[] }>('/api/v1/departments'),
   });
 }
 
@@ -22,7 +22,7 @@ export function useCreateDepartment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { name: string; code?: string }) =>
-      api.post<{ data: Department }>('/api/v1/departments', data),
+      apiClient.post<{ data: Department }>('/api/v1/departments', data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['departments'] }),
   });
 }
@@ -31,7 +31,7 @@ export function useUpdateDepartment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }: { id: string; name?: string; code?: string }) =>
-      api.patch<{ data: Department }>(`/api/v1/departments/${id}`, data),
+      apiClient.patch<{ data: Department }>(`/api/v1/departments/${id}`, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['departments'] }),
   });
 }

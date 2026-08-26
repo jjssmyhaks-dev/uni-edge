@@ -233,4 +233,110 @@ router.get('/stats', requireInstitutionAccess, requireRole('institution_admin', 
   res.json({ data: stats, error: null });
 });
 
+// ============================================
+// Proctor Assignments
+// ============================================
+
+// POST /assign — Assign a proctor to an exam
+router.post('/assign', requireInstitutionAccess, requireRole('institution_admin', 'exam_committee'), async (req: Request, res: Response) => {
+  const body = require('z').z.object({
+    exam_id: require('z').z.string().uuid(),
+    proctor_id: require('z').z.string().uuid(),
+    batch_name: require('z').z.string().optional(),
+    max_candidates: require('z').z.number().int().positive().optional(),
+  }).parse(req.body);
+
+  const { data, error } = await supabase
+    .from('proctor_assignments')
+    .insert({ ...body, institution_id: req.user!.institution_id! })
+    .select('*, users(full_name, email)')
+    .single();
+
+  if (error) {
+    if (error.code === '23505') throw new AppError(409, 'ALREADY_ASSIGNED', 'Proctor already assigned to this exam');
+    throw new AppError(500, 'DB_ERROR', error.message);
+  }
+
+  await logAudit({ req, action: 'proctor_assigned', entity_type: 'proctor_assignment', entity_id: data.id });
+  res.status(201).json({ data, error: null });
+});
+
+// GET /assignments/:examId — List proctors for an exam
+router.get('/assignments/:examId', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const examId = param(req.params.examId);
+  const { data, error } = await supabase
+    .from('proctor_assignments')
+    .select('*, users(full_name, email)')
+    .eq('exam_id', examId)
+    .eq('institution_id', req.user!.institution_id!);
+
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  res.json({ data, error: null });
+});
+
+// DELETE /assignments/:id — Remove a proctor assignment
+router.delete('/assignments/:id', requireInstitutionAccess, requireRole('institution_admin', 'exam_committee'), async (req: Request, res: Response) => {
+  const id = param(req.params.id);
+  const { error } = await supabase.from('proctor_assignments').delete().eq('id', id);
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  res.json({ data: { message: 'Proctor unassigned' }, error: null });
+});
+
+// ============================================
+// Live Monitoring
+// ============================================
+
+// GET /live — Get all in-progress sessions for live monitoring
+router.get('/live', requireInstitutionAccess, requireRole('institution_admin', 'exam_committee', 'invigilator'), async (req: Request, res: Response) => {
+  const { exam_id } = req.query;
+  let query = supabase
+    .from('proctoring_sessions')
+    .select(`
+      *, 
+      exam_candidates(candidate_name, candidate_email, registration_number), 
+      entrance_exams(name, exam_date, online_config),
+      flagged_events!inner(id, flag_type, severity, review_status, created_at)
+    `)
+    .eq('institution_id', req.user!.institution_id!)
+    .eq('status', 'in_progress')
+    .order('started_at', { ascending: false });
+
+  if (exam_id) query = query.eq('exam_id', exam_id as string);
+
+  const { data, error } = await query;
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  res.json({ data, error: null });
+});
+
+// POST /:id/terminate — Proctor terminates a session
+router.post('/:id/terminate', requireInstitutionAccess, requireRole('institution_admin', 'exam_committee'), async (req: Request, res: Response) => {
+  const id = param(req.params.id);
+  const body = require('z').z.object({ reason: require('z').z.string().optional() }).parse(req.body);
+
+  const { data, error } = await supabase
+    .from('proctoring_sessions')
+    .update({
+      status: 'terminated',
+      ended_at: new Date().toISOString(),
+      reviewer_notes: body.reason || 'Terminated by proctor',
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+
+  // Also terminate any active submission
+  if (data?.exam_id) {
+    await supabase
+      .from('exam_submissions')
+      .update({ status: 'terminated' })
+      .eq('proctoring_session_id', id)
+      .eq('status', 'in_progress');
+  }
+
+  await logAudit({ req, action: 'proctoring_session_terminated', entity_type: 'proctoring_session', entity_id: id, new_value: { reason: body.reason } });
+  res.json({ data, error: null });
+});
+
 export default router;

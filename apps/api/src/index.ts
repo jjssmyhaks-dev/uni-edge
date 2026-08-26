@@ -33,6 +33,9 @@ import proctoringRoutes from './routes/proctoring';
 import dashboardRoutes from './routes/dashboard';
 import onboardingRoutes from './routes/onboarding';
 import feeRoutes from './routes/fees';
+import examQuestionsRoutes from './routes/exam-questions';
+import examSubmissionsRoutes from './routes/exam-submissions';
+import meritListRoutes from './routes/merit-lists';
 
 const app = express();
 
@@ -88,6 +91,9 @@ app.use(`${API_PREFIX}/proctoring`, proctoringRoutes);
 app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
 app.use(`${API_PREFIX}/onboarding`, onboardingRoutes);
 app.use(`${API_PREFIX}/fees`, feeRoutes);
+app.use(`${API_PREFIX}/exam-questions`, examQuestionsRoutes);
+app.use(`${API_PREFIX}/exam-submissions`, examSubmissionsRoutes);
+app.use(`${API_PREFIX}/merit-lists`, meritListRoutes);
 
 // ============================================
 // Error Handling

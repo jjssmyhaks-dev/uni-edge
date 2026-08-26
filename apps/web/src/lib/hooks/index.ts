@@ -3,7 +3,7 @@ export { useDepartments, useCreateDepartment, useUpdateDepartment } from './useD
 export { usePrograms, useCreateProgram, useUpdateProgram } from './usePrograms';
 export { useEntranceExams, useEntranceExam, useCreateEntranceExam, useLockExam, usePublishExamResults } from './useEntranceExams';
 export { useRegularExams, useRegularExam, useCreateRegularExam, useUpdateExamStatus, useGenerateHallTickets, useBulkUploadResults } from './useRegularExams';
-export { useApplications, useApplication, useSubmitApplication, useUpdateApplicationStatus, useShortlistApplications } from './useApplications';
+export { useApplications, useApplication, useSubmitApplication, useUpdateApplicationStatus, useShortlistApplications, useMyApplications, useSendOffer, useWaitlistApplication, usePromoteFromWaitlist, useApplicationDocuments, useVerifyDocument } from './useApplications';
 export { useAttendance, useAttendanceSummary, useMarkAttendance, useBulkMarkAttendance } from './useAttendance';
 export { useNotices, useCreateNotice, useUpdateNotice, useDeleteNotice } from './useNotices';
 export { useDocumentRequests, useCreateDocumentRequest, useUpdateDocumentRequestStatus } from './useDocumentRequests';
@@ -22,3 +22,9 @@ export type { AttendanceRecord, AttendanceSummary } from './useAttendance';
 export type { Notice } from './useNotices';
 export type { DocumentRequest } from './useDocumentRequests';
 export type { ProctoringSession, ProctoringStats } from './useProctoring';
+export { useExamQuestions, useCreateExamQuestion, useBulkUploadQuestions, useDeleteExamQuestion } from './useExamQuestions';
+export type { ExamQuestion } from './useExamQuestions';
+export { useStartExam, useExamSubmission, useSaveAnswer, useSubmitExam, useExamResult, useAllSubmissions } from './useExamSubmissions';
+export type { ExamSubmission } from './useExamSubmissions';
+export { useGenerateMeritList, useMeritList, usePublishMeritList } from './useMeritLists';
+export type { MeritListEntry } from './useMeritLists';

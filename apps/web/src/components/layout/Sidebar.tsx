@@ -78,6 +78,13 @@ const navItems: NavItem[] = [
     section: 'Academics',
   },
   {
+    label: 'Admissions',
+    href: '/admin/admissions',
+    icon: <GraduationCap className="h-4 w-4" />,
+    roles: ['super_admin', 'institution_admin', 'exam_committee'],
+    section: 'Academics',
+  },
+  {
     label: 'Applications',
     href: '/admin/applications',
     icon: <ClipboardList className="h-4 w-4" />,

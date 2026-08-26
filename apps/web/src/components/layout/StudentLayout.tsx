@@ -23,6 +23,7 @@ const navItems = [
   { label: 'Dashboard', href: '/student/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
   { label: 'Profile', href: '/student/profile', icon: <User className="h-5 w-5" /> },
   { label: 'My Attendance', href: '/student/attendance', icon: <ClipboardCheck className="h-5 w-5" /> },
+  { label: 'Applications', href: '/student/applications', icon: <FileText className="h-5 w-5" /> },
   { label: 'Exam Schedule', href: '/student/exams', icon: <Calendar className="h-5 w-5" /> },
   { label: 'Hall Tickets', href: '/student/hall-tickets', icon: <Download className="h-5 w-5" /> },
   { label: 'Results', href: '/student/results', icon: <Award className="h-5 w-5" /> },

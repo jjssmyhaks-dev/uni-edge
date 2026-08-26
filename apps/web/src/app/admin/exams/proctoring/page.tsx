@@ -1,138 +1,191 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useProctoringSessions } from '@/lib/hooks/useProctoring';
+import { Input } from '@/components/ui/input';
+import { useProctoringSessions, useProctoringStats } from '@/lib/hooks/useProctoring';
 import {
   Shield,
   AlertTriangle,
   CheckCircle,
   Clock,
   Eye,
-  XCircle,
-  ArrowUpRight,
+  Camera,
   Loader2,
+  RefreshCw,
+  ArrowUpRight,
+  Wifi,
+  Search,
+  Filter,
 } from 'lucide-react';
-import Link from 'next/link';
 
-export default function ProctoringReviewPage() {
-  const { data: sessionsData, isLoading } = useProctoringSessions();
+export default function ProctoringDashboard() {
+  const { data: sessionsData, isLoading: sessionsLoading, refetch } = useProctoringSessions();
+  const { data: statsData, isLoading: statsLoading } = useProctoringStats();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
   const sessions = sessionsData?.data || [];
+  const stats = statsData?.data;
 
-  const stats = {
-    total: sessions.length,
-    inProgress: sessions.filter((s: any) => s.status === 'in_progress').length,
-    pendingReview: sessions.filter((s: any) => s.review_status === 'pending_review').length,
-    violations: sessions.filter((s: any) => s.review_status === 'violation').length,
-  };
+  const liveSessions = sessions.filter((s: any) => s.status === 'in_progress');
+  const filteredSessions = sessions.filter((s: any) => {
+    if (statusFilter !== 'all' && s.status !== statusFilter) return false;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      const name = s.exam_candidates?.candidate_name?.toLowerCase() || '';
+      const exam = s.entrance_exams?.name?.toLowerCase() || '';
+      return name.includes(q) || exam.includes(q);
+    }
+    return true;
+  });
+
+  // Auto-refresh every 15 seconds for live sessions
+  useEffect(() => {
+    if (liveSessions.length === 0) return;
+    const interval = setInterval(() => refetch(), 15000);
+    return () => clearInterval(interval);
+  }, [liveSessions.length, refetch]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Proctoring Review</h1>
-        <p className="text-sm text-muted-foreground mt-1">Monitor and review exam sessions</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Proctoring Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Monitor live exam sessions and review flagged events</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Refresh
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/admin/exams/proctoring/assign">
+              <Shield className="h-3.5 w-3.5 mr-1.5" /> Assign Proctors
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Sessions</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? '—' : stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">In Progress</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? '—' : stats.inProgress}</div>
-            <p className="text-xs text-muted-foreground mt-1">Live sessions</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Review</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? '—' : stats.pendingReview}</div>
-            <p className="text-xs text-muted-foreground mt-1">Awaiting your review</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Violations</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? '—' : stats.violations}</div>
-            <p className="text-xs text-muted-foreground mt-1">Confirmed violations</p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Sessions"
+          value={stats?.total_sessions || 0}
+          icon={<Shield className="h-4 w-4" />}
+          loading={statsLoading}
+        />
+        <StatCard
+          title="Live Now"
+          value={stats?.in_progress || 0}
+          icon={<Wifi className="h-4 w-4 text-green-600" />}
+          loading={statsLoading}
+          highlight={stats && stats.in_progress > 0}
+        />
+        <StatCard
+          title="Pending Review"
+          value={stats?.pending_review || 0}
+          icon={<Eye className="h-4 w-4 text-amber-600" />}
+          loading={statsLoading}
+        />
+        <StatCard
+          title="Violations"
+          value={stats?.violations || 0}
+          icon={<AlertTriangle className="h-4 w-4 text-red-600" />}
+          loading={statsLoading}
+        />
       </div>
 
-      {/* Sessions List */}
+      {/* Live Sessions */}
+      {liveSessions.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            Live Sessions ({liveSessions.length})
+          </h2>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {liveSessions.map((session: any) => (
+              <LiveSessionCard key={session.id} session={session} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            placeholder="Search by candidate or exam..."
+            className="pl-9"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+        >
+          <option value="all">All Status</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+          <option value="terminated">Terminated</option>
+        </select>
+      </div>
+
+      {/* All Sessions */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Sessions</CardTitle>
-          <CardDescription className="text-xs">All proctoring sessions for this institution</CardDescription>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">All Sessions</CardTitle>
+          <CardDescription className="text-xs">{filteredSessions.length} sessions</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : sessions.length === 0 ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              <Shield className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
-              No proctoring sessions yet
-            </div>
+          {sessionsLoading ? (
+            <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : filteredSessions.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">No sessions found</p>
           ) : (
-            <div className="space-y-2">
-              {sessions.map((session: any) => (
-                <div
-                  key={session.id}
-                  className="flex items-center gap-4 rounded-lg border p-4 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted shrink-0">
-                    <Shield className="h-5 w-5 text-muted-foreground" />
+            <div className="divide-y">
+              {filteredSessions.map((session: any) => (
+                <div key={session.id} className="flex items-center gap-3 py-3 hover:bg-muted/30 px-2 rounded">
+                  <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <Camera className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium truncate">
-                        {session.exam_candidates?.candidate_name || 'Unknown Candidate'}
-                      </p>
-                      <Badge
-                        variant={session.status === 'in_progress' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
+                      <span className="text-sm font-medium truncate">
+                        {session.exam_candidates?.candidate_name || 'Unknown'}
+                      </span>
+                      <Badge variant={session.status === 'in_progress' ? 'default' : 'secondary'} className="text-xs">
                         {session.status}
                       </Badge>
                       {session.review_status === 'pending_review' && (
                         <Badge variant="outline" className="text-xs text-amber-600">Needs Review</Badge>
                       )}
-                      {session.review_status === 'violation' && (
-                        <Badge variant="destructive" className="text-xs">Violation</Badge>
-                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {session.entrance_exams?.name || 'Exam'} · Started {new Date(session.started_at).toLocaleString()}
-                      {session.total_flag_count ? ` · ${session.total_flag_count} flags` : ''}
+                      {session.entrance_exams?.name || 'Exam'}
+                      {session.total_flag_count > 0 && ` · ${session.total_flag_count} flags`}
+                      {session.started_at && ` · Started ${new Date(session.started_at).toLocaleTimeString('en-IN')}`}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/admin/exams/proctoring/${session.id}`}>
-                      Review
-                      <ArrowUpRight className="h-3 w-3 ml-1" />
-                    </Link>
-                  </Button>
+                  {session.status === 'in_progress' && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-xs text-green-600">Live</span>
+                    </div>
+                  )}
+                  <Badge variant="secondary" className={`text-xs shrink-0 ${
+                    session.review_status === 'cleared' ? 'bg-green-500/10 text-green-700' :
+                    session.review_status === 'violation' ? 'bg-red-500/10 text-red-700' :
+                    'bg-yellow-500/10 text-yellow-700'
+                  }`}>
+                    {session.review_status?.replace('_', ' ') || 'pending'}
+                  </Badge>
                 </div>
               ))}
             </div>
@@ -140,5 +193,64 @@ export default function ProctoringReviewPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function StatCard({ title, value, icon, loading, highlight }: {
+  title: string; value: number; icon: React.ReactNode; loading: boolean; highlight?: boolean;
+}) {
+  return (
+    <Card className={highlight ? 'border-green-500/30' : ''}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-muted-foreground">{title}</p>
+          {icon}
+        </div>
+        {loading ? (
+          <div className="h-7 w-16 bg-muted rounded animate-pulse" />
+        ) : (
+          <p className="text-2xl font-bold">{value}</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LiveSessionCard({ session }: { session: any }) {
+  const elapsed = session.started_at
+    ? Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000)
+    : 0;
+  const minutes = Math.floor(elapsed / 60);
+  const flags = session.total_flag_count || 0;
+
+  return (
+    <Card className="border-green-500/20">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-sm font-medium">{session.exam_candidates?.candidate_name || 'Candidate'}</span>
+          </div>
+          <Badge className="text-xs bg-green-500/10 text-green-700">Live</Badge>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3">
+          {session.entrance_exams?.name || 'Exam'} · {minutes}m elapsed
+        </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {flags > 0 && (
+              <Badge variant="outline" className={`text-xs ${flags >= 5 ? 'text-red-600 border-red-300' : flags >= 3 ? 'text-amber-600 border-amber-300' : ''}`}>
+                <AlertTriangle className="h-3 w-3 mr-1" /> {flags} flag{flags !== 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
+          <Link href={`/admin/exams/proctoring/${session.id}`}>
+            <Button variant="ghost" size="sm" className="h-7 px-2">
+              <Eye className="h-3.5 w-3.5 mr-1" /> View
+            </Button>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -65,3 +65,51 @@ export function useShortlistApplications() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['applications'] }),
   });
 }
+
+export function useMyApplications() {
+  return useQuery({
+    queryKey: ['my-applications'],
+    queryFn: () => apiClient.get<{ data: Application[] }>('/api/v1/applications/student/my'),
+  });
+}
+
+export function useSendOffer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.post<{ data: Application }>(`/api/v1/applications/${id}/offer`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['applications'] }),
+  });
+}
+
+export function useWaitlistApplication() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.post<{ data: Application }>(`/api/v1/applications/${id}/waitlist`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['applications'] }),
+  });
+}
+
+export function usePromoteFromWaitlist() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.post<{ data: Application }>(`/api/v1/applications/${id}/promote`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['applications'] }),
+  });
+}
+
+export function useApplicationDocuments(appId: string) {
+  return useQuery({
+    queryKey: ['application-documents', appId],
+    queryFn: () => apiClient.get<{ data: { id: string; document_type: string; file_url: string; verification_status: string }[] }>(`/api/v1/applications/${appId}/documents`),
+    enabled: !!appId,
+  });
+}
+
+export function useVerifyDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ appId, docId, status }: { appId: string; docId: string; status: string }) =>
+      apiClient.patch<{ data: { id: string } }>(`/api/v1/applications/${appId}/documents/${docId}/verify`, { verification_status: status }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['application-documents'] }),
+  });
+}

@@ -138,4 +138,80 @@ router.post('/:id/confirm', requireInstitutionAccess, async (req: Request, res: 
   res.json({ data, error: null });
 });
 
+// GET /:id/documents — Get documents for an application
+router.get('/:id/documents', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const id = param(req.params.id);
+  const { data, error } = await supabase.from('documents').select('*').eq('application_id', id).order('created_at');
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+
+  // Applicants can only see their own
+  if (req.user!.role === 'applicant') {
+    const { data: app } = await supabase.from('applications').select('clerk_user_id').eq('id', id).single();
+    if (app?.clerk_user_id !== req.user!.sub) throw new AppError(403, 'FORBIDDEN', 'Access denied');
+  }
+
+  res.json({ data, error: null });
+});
+
+// PATCH /:id/documents/:docId/verify — Verify or reject a document
+router.patch('/:id/documents/:docId/verify', requireInstitutionAccess, requireRole('institution_admin', 'staff'), async (req: Request, res: Response) => {
+  const docId = param(req.params.docId);
+  const body = z.object({
+    verification_status: z.enum(['verified', 'rejected', 'resubmission_required']),
+    remarks: z.string().optional(),
+  }).parse(req.body);
+
+  const { data, error } = await supabase.from('documents').update({
+    verification_status: body.verification_status,
+    verified_by: req.user!.sub,
+    verified_at: new Date().toISOString(),
+  }).eq('id', docId).select().single();
+
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  await logAudit({ req, action: 'document_verified', entity_type: 'document', entity_id: docId, new_value: { status: body.verification_status } });
+  res.json({ data, error: null });
+});
+
+// POST /:id/offer — Send offer letter (admin)
+router.post('/:id/offer', requireInstitutionAccess, requireRole('institution_admin'), async (req: Request, res: Response) => {
+  const id = param(req.params.id);
+  const { data, error } = await supabase.from('applications').update({ status: 'offer_sent' }).eq('id', id).select().single();
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  await logAudit({ req, action: 'offer_sent', entity_type: 'application', entity_id: id });
+  res.json({ data, error: null });
+});
+
+// POST /:id/waitlist — Move to waitlist (admin)
+router.post('/:id/waitlist', requireInstitutionAccess, requireRole('institution_admin'), async (req: Request, res: Response) => {
+  const id = param(req.params.id);
+  const { data, error } = await supabase.from('applications').update({ status: 'waitlisted' }).eq('id', id).select().single();
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  await logAudit({ req, action: 'application_waitlisted', entity_type: 'application', entity_id: id });
+  res.json({ data, error: null });
+});
+
+// POST /:id/promote — Promote from waitlist (admin)
+router.post('/:id/promote', requireInstitutionAccess, requireRole('institution_admin'), async (req: Request, res: Response) => {
+  const id = param(req.params.id);
+  const { data: app } = await supabase.from('applications').select('status').eq('id', id).single();
+  if (app?.status !== 'waitlisted') throw new AppError(400, 'NOT_WAITLISTED', 'Application is not on the waitlist');
+
+  const { data, error } = await supabase.from('applications').update({ status: 'shortlisted' }).eq('id', id).select().single();
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  await logAudit({ req, action: 'application_promoted_from_waitlist', entity_type: 'application', entity_id: id });
+  res.json({ data, error: null });
+});
+
+// GET /student/my — Get current user's applications
+router.get('/student/my', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const { data, error } = await supabase
+    .from('applications')
+    .select('*, admission_cycles(academic_year, programs(name, code)), documents(id, document_type, verification_status)')
+    .eq('clerk_user_id', req.user!.sub)
+    .order('created_at', { ascending: false });
+
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  res.json({ data, error: null });
+});
+
 export default router;

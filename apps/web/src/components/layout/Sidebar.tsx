@@ -19,6 +19,7 @@ import {
   FileCheck,
   Camera,
   GraduationCap as LogoIcon,
+  IndianRupee,
 } from 'lucide-react';
 import type { UserRole } from '@uni-edge/types';
 
@@ -109,6 +110,13 @@ const navItems: NavItem[] = [
     href: '/admin/notices',
     icon: <Bell className="h-4 w-4" />,
     section: 'Communication',
+  },
+  {
+    label: 'Fees & Payments',
+    href: '/admin/fees',
+    icon: <IndianRupee className="h-4 w-4" />,
+    roles: ['super_admin', 'institution_admin', 'staff'],
+    section: 'Finance',
   },
   {
     label: 'Doc Requests',

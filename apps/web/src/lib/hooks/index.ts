@@ -8,6 +8,9 @@ export { useAttendance, useAttendanceSummary, useMarkAttendance, useBulkMarkAtte
 export { useNotices, useCreateNotice, useUpdateNotice, useDeleteNotice } from './useNotices';
 export { useDocumentRequests, useCreateDocumentRequest, useUpdateDocumentRequestStatus } from './useDocumentRequests';
 export { useProctoringSessions, useProctoringStats, useReviewProctoringSession, useFlaggedEvents, useReviewFlag } from './useProctoring';
+export { useOnboardingStatus, useCompleteOnboarding } from './useOnboarding';
+export { useFeeCategories, useCreateFeeCategory, useFeeStructures, useCreateFeeStructure, useInvoices, useCreateInvoice, useUpdateInvoice, usePayments, useSubmitPayment, useVerifyPayment, useFeeSummary } from './useFees';
+export type { FeeCategory, FeeStructure, Invoice, Payment, FeeSummary } from './useFees';
 
 export type { Institution } from './useInstitutions';
 export type { Department } from './useDepartments';

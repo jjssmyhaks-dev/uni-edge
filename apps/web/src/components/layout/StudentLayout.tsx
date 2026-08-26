@@ -16,6 +16,7 @@ import {
   FileText,
   GraduationCap,
   Settings,
+  IndianRupee,
 } from 'lucide-react';
 
 const navItems = [
@@ -26,6 +27,7 @@ const navItems = [
   { label: 'Hall Tickets', href: '/student/hall-tickets', icon: <Download className="h-5 w-5" /> },
   { label: 'Results', href: '/student/results', icon: <Award className="h-5 w-5" /> },
   { label: 'Documents', href: '/student/documents', icon: <FileText className="h-5 w-5" /> },
+  { label: 'Fees & Payments', href: '/student/fees', icon: <IndianRupee className="h-5 w-5" /> },
   { label: 'Notices', href: '/student/notices', icon: <Bell className="h-5 w-5" /> },
 ];
 

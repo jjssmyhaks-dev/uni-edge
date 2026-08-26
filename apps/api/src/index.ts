@@ -31,6 +31,8 @@ import noticeRoutes from './routes/notices';
 import documentRequestRoutes from './routes/document-requests';
 import proctoringRoutes from './routes/proctoring';
 import dashboardRoutes from './routes/dashboard';
+import onboardingRoutes from './routes/onboarding';
+import feeRoutes from './routes/fees';
 
 const app = express();
 
@@ -84,6 +86,8 @@ app.use(`${API_PREFIX}/regular-exams`, regularExamRoutes);
 // Module 6: Online Proctored Exam
 app.use(`${API_PREFIX}/proctoring`, proctoringRoutes);
 app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
+app.use(`${API_PREFIX}/onboarding`, onboardingRoutes);
+app.use(`${API_PREFIX}/fees`, feeRoutes);
 
 // ============================================
 // Error Handling

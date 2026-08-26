@@ -1,6 +1,7 @@
 'use client';
 
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import { OnboardingGuard } from '@/components/auth/OnboardingGuard';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 export default function AdminLayout({
@@ -10,7 +11,9 @@ export default function AdminLayout({
 }) {
   return (
     <AuthGuard>
-      <DashboardLayout>{children}</DashboardLayout>
+      <OnboardingGuard>
+        <DashboardLayout>{children}</DashboardLayout>
+      </OnboardingGuard>
     </AuthGuard>
   );
 }

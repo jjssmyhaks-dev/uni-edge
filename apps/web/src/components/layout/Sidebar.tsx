@@ -15,136 +15,101 @@ import {
   Shield,
   Settings,
   ChevronLeft,
+  ChevronDown,
   ClipboardCheck,
   FileCheck,
   Camera,
-  GraduationCap as LogoIcon,
   IndianRupee,
+  LogOut,
+  HelpCircle,
+  Plus,
 } from 'lucide-react';
+import {
+  Avatar,
+  AvatarFallback,
+} from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 import type { UserRole } from '@uni-edge/types';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useUser, useClerk } from '@clerk/nextjs';
 
 interface NavItem {
   label: string;
   href: string;
-  icon: React.ReactNode;
+  icon: React.ComponentType<{ className?: string }>;
   roles?: UserRole[];
-  section?: string;
 }
 
-const navItems: NavItem[] = [
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const navSections: NavSection[] = [
   {
-    label: 'Dashboard',
-    href: '/admin/dashboard',
-    icon: <LayoutDashboard className="h-4 w-4" />,
-    section: 'Overview',
+    title: 'Overview',
+    items: [
+      { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    ],
   },
   {
-    label: 'Institutions',
-    href: '/admin/institutions',
-    icon: <Building2 className="h-4 w-4" />,
-    roles: ['super_admin'],
-    section: 'Management',
+    title: 'Management',
+    items: [
+      { label: 'Institutions', href: '/admin/institutions', icon: Building2, roles: ['super_admin'] },
+      { label: 'Departments', href: '/admin/departments', icon: BookOpen },
+      { label: 'Programs', href: '/admin/programs', icon: GraduationCap },
+    ],
   },
   {
-    label: 'Departments',
-    href: '/admin/departments',
-    icon: <BookOpen className="h-4 w-4" />,
-    section: 'Management',
+    title: 'People',
+    items: [
+      { label: 'Students', href: '/admin/students', icon: Users },
+      { label: 'Staff', href: '/admin/staff', icon: Users, roles: ['super_admin', 'institution_admin'] },
+    ],
   },
   {
-    label: 'Programs',
-    href: '/admin/programs',
-    icon: <GraduationCap className="h-4 w-4" />,
-    section: 'Management',
+    title: 'Academics',
+    items: [
+      { label: 'Admissions', href: '/admin/admissions', icon: FileText, roles: ['super_admin', 'institution_admin', 'exam_committee'] },
+      { label: 'Applications', href: '/admin/applications', icon: ClipboardList, roles: ['super_admin', 'institution_admin'] },
+      { label: 'Exams', href: '/admin/exams', icon: ClipboardList, roles: ['super_admin', 'institution_admin', 'exam_committee'] },
+      { label: 'Attendance', href: '/admin/attendance', icon: ClipboardCheck, roles: ['super_admin', 'institution_admin', 'faculty', 'staff'] },
+      { label: 'Proctoring', href: '/admin/exams/proctoring', icon: Camera, roles: ['super_admin', 'institution_admin', 'exam_committee'] },
+    ],
   },
   {
-    label: 'Students',
-    href: '/admin/students',
-    icon: <Users className="h-4 w-4" />,
-    section: 'People',
+    title: 'Finance',
+    items: [
+      { label: 'Fees & Payments', href: '/admin/fees', icon: IndianRupee, roles: ['super_admin', 'institution_admin', 'staff'] },
+    ],
   },
   {
-    label: 'Staff',
-    href: '/admin/staff',
-    icon: <Users className="h-4 w-4" />,
-    roles: ['super_admin', 'institution_admin'],
-    section: 'People',
+    title: 'Communication',
+    items: [
+      { label: 'Notices', href: '/admin/notices', icon: Bell },
+      { label: 'Doc Requests', href: '/admin/document-requests', icon: FileCheck, roles: ['super_admin', 'institution_admin', 'staff'] },
+    ],
   },
   {
-    label: 'Admissions',
-    href: '/admin/admissions',
-    icon: <FileText className="h-4 w-4" />,
-    roles: ['super_admin', 'institution_admin', 'exam_committee', 'staff'],
-    section: 'Academics',
-  },
-  {
-    label: 'Admissions',
-    href: '/admin/admissions',
-    icon: <GraduationCap className="h-4 w-4" />,
-    roles: ['super_admin', 'institution_admin', 'exam_committee'],
-    section: 'Academics',
-  },
-  {
-    label: 'Applications',
-    href: '/admin/applications',
-    icon: <ClipboardList className="h-4 w-4" />,
-    roles: ['super_admin', 'institution_admin'],
-    section: 'Academics',
-  },
-  {
-    label: 'Exams',
-    href: '/admin/exams',
-    icon: <ClipboardList className="h-4 w-4" />,
-    roles: ['super_admin', 'institution_admin', 'exam_committee'],
-    section: 'Academics',
-  },
-  {
-    label: 'Attendance',
-    href: '/admin/attendance',
-    icon: <ClipboardCheck className="h-4 w-4" />,
-    roles: ['super_admin', 'institution_admin', 'faculty', 'staff'],
-    section: 'Academics',
-  },
-  {
-    label: 'Proctoring',
-    href: '/admin/exams/proctoring',
-    icon: <Camera className="h-4 w-4" />,
-    roles: ['super_admin', 'institution_admin', 'exam_committee'],
-    section: 'Academics',
-  },
-  {
-    label: 'Notices',
-    href: '/admin/notices',
-    icon: <Bell className="h-4 w-4" />,
-    section: 'Communication',
-  },
-  {
-    label: 'Fees & Payments',
-    href: '/admin/fees',
-    icon: <IndianRupee className="h-4 w-4" />,
-    roles: ['super_admin', 'institution_admin', 'staff'],
-    section: 'Finance',
-  },
-  {
-    label: 'Doc Requests',
-    href: '/admin/document-requests',
-    icon: <FileCheck className="h-4 w-4" />,
-    roles: ['super_admin', 'institution_admin', 'staff'],
-    section: 'Communication',
-  },
-  {
-    label: 'Audit Logs',
-    href: '/admin/audit',
-    icon: <Shield className="h-4 w-4" />,
-    roles: ['super_admin', 'institution_admin', 'exam_committee'],
-    section: 'System',
-  },
-  {
-    label: 'Settings',
-    href: '/admin/settings',
-    icon: <Settings className="h-4 w-4" />,
-    roles: ['super_admin', 'institution_admin'],
-    section: 'System',
+    title: 'System',
+    items: [
+      { label: 'Audit Logs', href: '/admin/audit', icon: Shield, roles: ['super_admin', 'institution_admin', 'exam_committee'] },
+      { label: 'Settings', href: '/admin/settings', icon: Settings, roles: ['super_admin', 'institution_admin'] },
+    ],
   },
 ];
 
@@ -156,31 +121,33 @@ interface SidebarProps {
 
 export function Sidebar({ userRole, collapsed = false, onCollapse }: SidebarProps) {
   const pathname = usePathname();
+  const { user } = useUser();
+  const { signOut } = useClerk();
 
-  const filteredItems = navItems.filter(
-    (item) => !item.roles || (userRole && item.roles.includes(item.roles[0]))
-  );
+  const displayName = user?.firstName || user?.lastName
+    ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+    : 'Admin';
+  const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const email = user?.primaryEmailAddress?.emailAddress || '';
 
-  // Group by section
-  const sections = filteredItems.reduce((acc, item) => {
-    const section = item.section || 'Other';
-    if (!acc[section]) acc[section] = [];
-    acc[section].push(item);
-    return acc;
-  }, {} as Record<string, NavItem[]>);
+  const filteredSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) => !item.roles || (userRole && item.roles.includes(userRole))
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
 
   return (
-    <aside
-      className={cn(
-        'flex flex-col border-r bg-card transition-all duration-300',
-        collapsed ? 'w-16' : 'w-64'
-      )}
-    >
+    <aside className={cn('flex flex-col border-r bg-card transition-all duration-300', collapsed ? 'w-16' : 'w-64')}>
       {/* Logo */}
-      <div className="flex h-16 items-center gap-2 border-b px-4">
-        <LogoIcon className="h-6 w-6 text-primary shrink-0" />
+      <div className="flex h-16 items-center gap-2 border-b px-4 shrink-0">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground font-bold text-sm shrink-0">
+          UE
+        </div>
         {!collapsed && (
-          <span className="text-xl font-bold text-primary">Uni-Edge</span>
+          <span className="text-lg font-semibold text-foreground">Uni-Edge</span>
         )}
         <button
           onClick={onCollapse}
@@ -190,66 +157,132 @@ export function Sidebar({ userRole, collapsed = false, onCollapse }: SidebarProp
           )}
         >
           <ChevronLeft
-            className={cn('h-5 w-5 transition-transform', collapsed && 'rotate-180')}
+            className={cn('h-4 w-4 transition-transform', collapsed && 'rotate-180')}
           />
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-2">
-        {!collapsed ? (
-          Object.entries(sections).map(([section, items]) => (
-            <div key={section} className="mb-4">
-              <p className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                {section}
-              </p>
-              {items.map((item) => {
-                const isActive =
-                  item.href === '/admin/dashboard'
-                    ? pathname === '/admin/dashboard'
-                    : pathname.startsWith(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                    )}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          ))
-        ) : (
-          filteredItems.map((item) => {
-            const isActive =
-              item.href === '/admin'
-                ? pathname === '/admin/dashboard' || pathname === '/admin'
-                : pathname.startsWith(item.href);
+      <nav className="flex-1 overflow-y-auto py-3 px-2">
+        {collapsed ? (
+          filteredSections.flatMap((section) => section.items).map((item) => {
+            const isActive = item.href === '/admin/dashboard'
+              ? pathname === '/admin/dashboard'
+              : pathname.startsWith(item.href);
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center justify-center rounded-md p-2 mb-1 transition-colors',
-                  isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                )}
-                title={item.label}
-              >
-                {item.icon}
-              </Link>
+              <TooltipProvider key={item.href} delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        'flex items-center justify-center rounded-md p-2 mb-1 transition-colors',
+                        isActive
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{item.label}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             );
           })
+        ) : (
+          filteredSections.map((section) => (
+            <Collapsible key={section.title} defaultOpen>
+              <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors">
+                {section.title}
+                <ChevronDown className="h-3 w-3 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                {section.items.map((item) => {
+                  const isActive = item.href === '/admin/dashboard'
+                    ? pathname === '/admin/dashboard'
+                    : pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                        isActive
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                      )}
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </CollapsibleContent>
+            </Collapsible>
+          ))
         )}
       </nav>
+
+      {/* Footer */}
+      {!collapsed && (
+        <div className="border-t p-4 shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Avatar className="h-8 w-8 cursor-pointer">
+                    <AvatarFallback className="rounded-full text-xs">{initials}</AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48" align="start">
+                  <DropdownMenuLabel>
+                    <p className="font-medium">{displayName}</p>
+                    <p className="text-xs text-muted-foreground font-normal">{email}</p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/' })}>
+                    <LogOut className="mr-2 h-4 w-4 opacity-80" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-4 w-4 cursor-pointer opacity-60 hover:opacity-100" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[200px]">
+                    <p className="text-xs">Uni-Edge University Management Platform</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuLabel>Add New</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/exams/entrance/new">
+                    <ClipboardList className="mr-2 h-4 w-4 opacity-80" />
+                    New Exam
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/notices">
+                    <Bell className="mr-2 h-4 w-4 opacity-80" />
+                    Post Notice
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

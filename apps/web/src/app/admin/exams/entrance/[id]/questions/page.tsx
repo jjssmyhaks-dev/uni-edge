@@ -23,8 +23,8 @@ import {
   FileText,
 } from 'lucide-react';
 
-export default function QuestionEditorPage({ params }: { params: Promise<{ examId: string }> }) {
-  const { examId } = use(params);
+export default function QuestionEditorPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: examId } = use(params);
   const router = useRouter();
   const { data: questionsData, isLoading } = useExamQuestions(examId);
   const createQuestion = useCreateExamQuestion();

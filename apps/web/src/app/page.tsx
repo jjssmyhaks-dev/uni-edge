@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 const features = [
-  { icon: <GraduationCap className="h-5 w-5" />, title: 'Smart Admissions', description: 'Automate entrance exams, merit list generation, and enrollment workflows.' },
+  { icon: <GraduationCap className="h-5 w-5" />, title: 'Smart Admissions', description: 'Automate exams, merit list generation, and enrollment workflows.' },
   { icon: <ClipboardList className="h-5 w-5" />, title: 'Exam Management', description: 'Schedule exams, auto-allocate rooms, assign invigilators, and manage results.' },
   { icon: <Camera className="h-5 w-5" />, title: 'Online Proctoring', description: 'AI-powered proctoring with face detection and tab-switch monitoring.' },
   { icon: <Users className="h-5 w-5" />, title: 'Student Portal', description: 'Students view schedules, download hall tickets, track attendance, and results.' },
@@ -34,7 +34,7 @@ const features = [
 ];
 
 const modules = [
-  { number: '01', title: 'Pre-Admission & Entrance', description: 'Programs, seats, eligibility criteria, entrance exams, merit lists.' },
+  { number: '01', title: 'Pre-Admission & Exams', description: 'Programs, seats, eligibility criteria, exams, merit lists.' },
   { number: '02', title: 'Admission & Enrollment', description: 'Application forms, document verification, offer letters, enrollment.' },
   { number: '03', title: 'Academic Administration', description: 'Attendance, student records, notices, document request workflows.' },
   { number: '04', title: 'Regular Examinations', description: 'Scheduling, room allocation, hall tickets, invigilators, results.' },
@@ -43,7 +43,7 @@ const modules = [
 
 const steps = [
   { step: '1', title: 'Register Institution', description: 'Sign up and configure your institution, departments, and programs.' },
-  { step: '2', title: 'Set Up Admissions', description: 'Configure admission cycles, eligibility criteria, and entrance exams.' },
+  { step: '2', title: 'Set Up Admissions', description: 'Configure admission cycles, eligibility criteria, and exams.' },
   { step: '3', title: 'Manage Students', description: 'Track attendance, schedule exams, and publish results.' },
 ];
 
@@ -73,7 +73,7 @@ export default function HomePage() {
               </h1>
               <p className="mt-6 max-w-xl text-lg text-muted-foreground leading-relaxed">
                 Automate administrative, admissions, and examination workflows.
-                One platform for the complete student lifecycle — from entrance exam to graduation.
+                One platform for the complete student lifecycle — from exam to graduation.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
                 <Button size="lg" asChild>

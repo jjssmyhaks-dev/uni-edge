@@ -103,8 +103,8 @@ export default function CreateEntranceExamPage() {
           <ArrowLeft className="h-4 w-4 mr-1" /> Back
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Create Entrance Exam</h1>
-          <p className="text-muted-foreground text-sm">Set up a new entrance examination with proctoring config</p>
+          <h1 className="text-2xl font-bold tracking-tight">Create Exam</h1>
+          <p className="text-muted-foreground text-sm">Set up a new examination with proctoring config</p>
         </div>
       </div>
 

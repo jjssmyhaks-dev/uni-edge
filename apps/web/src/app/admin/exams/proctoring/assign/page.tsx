@@ -74,7 +74,7 @@ export default function ProctorAssignPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Assign Proctors</h1>
-          <p className="text-muted-foreground text-sm">Assign staff members as proctors to entrance exams</p>
+          <p className="text-muted-foreground text-sm">Assign staff members as proctors to exams</p>
         </div>
       </div>
 

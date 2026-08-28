@@ -11,12 +11,12 @@ export default function ExamsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Examinations</h1>
-          <p className="text-muted-foreground">Manage entrance exams, regular exams, hall tickets, and online proctoring.</p>
+          <p className="text-muted-foreground">Manage exams, regular exams, hall tickets, and online proctoring.</p>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Entrance Exams */}
+        {/* Exams */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -24,14 +24,14 @@ export default function ExamsPage() {
                 <ClipboardList className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-lg">Entrance Exams</CardTitle>
-                <CardDescription>Admission entrance examinations</CardDescription>
+                <CardTitle className="text-lg">Exams</CardTitle>
+                <CardDescription>Admission examinations</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Create and manage entrance exams, register candidates, upload scores,
+              Create and manage exams, register candidates, upload scores,
               and generate merit lists.
             </p>
             <Button asChild>

@@ -27,7 +27,7 @@ export default function StudentExamsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Examinations</h1>
-        <p className="text-muted-foreground text-sm">View and take entrance examinations</p>
+        <p className="text-muted-foreground text-sm">View and take examinations</p>
       </div>
 
       {isLoading ? (

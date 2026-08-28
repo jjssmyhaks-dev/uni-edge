@@ -22,12 +22,12 @@ export default function EntranceExamsPage() {
   return (
     <div className='space-y-6'>
       <div className='flex items-center justify-between'>
-        <div><h1 className='text-2xl font-bold tracking-tight'>Entrance Exams</h1>
-        <p className='text-muted-foreground text-sm'>Create and manage entrance examinations</p></div>
+        <div><h1 className='text-2xl font-bold tracking-tight'>Exams</h1>
+        <p className='text-muted-foreground text-sm'>Create and manage examinations</p></div>
         <Button asChild><Link href='/admin/exams/entrance/new'><Plus className='h-4 w-4 mr-1.5' /> Create Exam</Link></Button>
       </div>
       {isLoading ? (<div className='flex items-center justify-center py-12'><Loader2 className='h-6 w-6 animate-spin text-muted-foreground' /></div>)
-      : exams.length === 0 ? (<Card><CardContent className='py-12 text-center'><ClipboardList className='h-10 w-10 text-muted-foreground mx-auto mb-3' /><p className='text-muted-foreground'>No entrance exams yet</p></CardContent></Card>)
+      : exams.length === 0 ? (<Card><CardContent className='py-12 text-center'><ClipboardList className='h-10 w-10 text-muted-foreground mx-auto mb-3' /><p className='text-muted-foreground'>No exams yet</p></CardContent></Card>)
       : (
         <div className='w-full rounded-lg border bg-card'>
           <Table><TableHeader><TableRow className='border-b hover:bg-transparent'>

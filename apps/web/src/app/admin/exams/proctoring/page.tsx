@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useProctoringSessions, useProctoringStats } from '@/lib/hooks/useProctoring';
 import {
   Shield,
@@ -149,45 +151,45 @@ export default function ProctoringDashboard() {
           ) : filteredSessions.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">No sessions found</p>
           ) : (
-            <div className="divide-y">
-              {filteredSessions.map((session: any) => (
-                <div key={session.id} className="flex items-center gap-3 py-3 hover:bg-muted/30 px-2 rounded">
-                  <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0">
-                    <Camera className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium truncate">
-                        {session.exam_candidates?.candidate_name || 'Unknown'}
-                      </span>
-                      <Badge variant={session.status === 'in_progress' ? 'default' : 'secondary'} className="text-xs">
-                        {session.status}
-                      </Badge>
-                      {session.review_status === 'pending_review' && (
-                        <Badge variant="outline" className="text-xs text-amber-600">Needs Review</Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {session.entrance_exams?.name || 'Exam'}
-                      {session.total_flag_count > 0 && ` · ${session.total_flag_count} flags`}
-                      {session.started_at && ` · Started ${new Date(session.started_at).toLocaleTimeString('en-IN')}`}
-                    </p>
-                  </div>
-                  {session.status === 'in_progress' && (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                      <span className="text-xs text-green-600">Live</span>
-                    </div>
-                  )}
-                  <Badge variant="secondary" className={`text-xs shrink-0 ${
-                    session.review_status === 'cleared' ? 'bg-green-500/10 text-green-700' :
-                    session.review_status === 'violation' ? 'bg-red-500/10 text-red-700' :
-                    'bg-yellow-500/10 text-yellow-700'
-                  }`}>
-                    {session.review_status?.replace('_', ' ') || 'pending'}
-                  </Badge>
-                </div>
-              ))}
+            <div className="rounded-lg border bg-card">
+              <Table>
+                <TableHeader><TableRow className="border-b hover:bg-transparent">
+                  <TableHead className="h-12 px-4 font-medium">Candidate</TableHead>
+                  <TableHead className="h-12 px-4 font-medium">Exam</TableHead>
+                  <TableHead className="h-12 px-4 font-medium">Status</TableHead>
+                  <TableHead className="h-12 px-4 font-medium">Flags</TableHead>
+                  <TableHead className="h-12 px-4 font-medium">Review</TableHead>
+                  <TableHead className="h-12 w-[120px] px-4 font-medium">Actions</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {filteredSessions.map((session: any) => (
+                    <TableRow key={session.id} className="hover:bg-muted/50">
+                      <TableCell className="h-16 px-4">
+                        <div className="flex items-center gap-2">
+                          <Camera className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">{session.exam_candidates?.candidate_name || 'Unknown'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="h-16 px-4 text-sm text-muted-foreground">{session.entrance_exams?.name || 'Exam'}</TableCell>
+                      <TableCell className="h-16 px-4">
+                        <Badge variant={session.status === 'in_progress' ? 'default' : 'secondary'} className="text-xs">{session.status}</Badge>
+                      </TableCell>
+                      <TableCell className="h-16 px-4 text-sm">{session.total_flag_count || 0} flags</TableCell>
+                      <TableCell className="h-16 px-4">
+                        <Badge variant="secondary" className={"text-xs " + (session.review_status === 'cleared' ? 'bg-green-500/10 text-green-700' : session.review_status === 'violation' ? 'bg-red-500/10 text-red-700' : 'bg-yellow-500/10 text-yellow-700')}>
+                          {session.review_status?.replace('_', ' ') || 'pending'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="h-16 px-4">
+                        <TooltipProvider><div className="flex items-center gap-1">
+                          <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-8 w-8"><Eye className="size-4" /></Button></TooltipTrigger><TooltipContent>View Session</TooltipContent></Tooltip>
+                          {session.status === 'in_progress' && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /><span className="text-xs text-green-600">Live</span></span>}
+                        </div></TooltipProvider>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>

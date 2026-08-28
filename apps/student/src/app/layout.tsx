@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { Toaster } from 'sonner';
 import './globals.css';
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           <ThemeProvider>
             <QueryProvider>{children}</QueryProvider>
+            <Toaster position="top-right" richColors closeButton />
           </ThemeProvider>
         </body>
       </html>

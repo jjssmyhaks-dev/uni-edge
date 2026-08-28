@@ -1,21 +1,36 @@
 'use client';
 
 import { UserButton } from '@clerk/nextjs';
-import { Bell, HelpCircle, Moon, Sun } from 'lucide-react';
+import { Bell, HelpCircle, Moon, Sun, Menu } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { CommandMenu } from './CommandMenu';
 
-export function TopNav() {
+interface TopNavProps {
+  onMobileMenuToggle?: () => void;
+}
+
+export function TopNav({ onMobileMenuToggle }: TopNavProps) {
   const { theme, setTheme } = useTheme();
 
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-card px-6">
-      <div className="flex items-center flex-1 max-w-md">
-        <CommandMenu />
+    <header className="flex h-14 items-center justify-between border-b bg-card px-4 md:px-6">
+      <div className="flex items-center flex-1 max-w-md gap-2">
+        {/* Mobile hamburger */}
+        {onMobileMenuToggle && (
+          <button
+            onClick={onMobileMenuToggle}
+            className="flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors lg:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        )}
+        <div className="hidden sm:block w-full">
+          <CommandMenu />
+        </div>
       </div>
 
       <div className="flex items-center gap-1">
-        <button className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+        <button className="hidden md:flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
           <HelpCircle className="h-4 w-4" />
         </button>
 

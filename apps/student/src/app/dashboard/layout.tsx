@@ -1,13 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { StudentSidebar } from '@/components/layout/StudentSidebar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -19,14 +16,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   Bell,
-  Search,
-  Settings,
+  Menu,
   LogOut,
   User,
   Moon,
   Sun,
-  PanelLeftClose,
-  PanelLeft,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
@@ -34,6 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
@@ -41,6 +36,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.push('/login');
     }
   }, [isLoaded, user, router]);
+
+  // Close mobile sidebar on resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) setMobileOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   if (!isLoaded) {
     return (
@@ -60,35 +64,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <StudentSidebar collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} />
+      {/* Desktop sidebar */}
+      <div className="hidden lg:flex">
+        <StudentSidebar collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} />
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="fixed inset-0 bg-black/50 transition-opacity"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="fixed inset-y-0 left-0 z-50 w-64">
+            <StudentSidebar collapsed={false} onCollapse={() => setMobileOpen(false)} />
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top Nav */}
-        <header className="flex h-16 items-center gap-4 border-b bg-card px-6 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0"
-            onClick={() => setCollapsed(!collapsed)}
+        <header className="flex h-14 md:h-16 items-center gap-2 md:gap-4 border-b bg-card px-3 md:px-6 shrink-0">
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:bg-accent transition-colors lg:hidden"
           >
-            {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </Button>
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search courses, grades, assignments..."
-              className="pl-10 bg-muted/50"
-            />
-          </div>
-          <div className="flex items-center gap-2">
+            <Menu className="h-5 w-5" />
+          </button>
+
+          <div className="flex-1" />
+
+          <div className="flex items-center gap-1 md:gap-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="h-9 w-9"
             >
               <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             </Button>
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative h-9 w-9">
               <Bell className="h-4 w-4" />
               <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">3</span>
             </Button>
@@ -104,11 +121,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <p className="text-xs text-muted-foreground font-normal">{email}</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push('/profile')}>
+                <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
                   <User className="mr-2 h-4 w-4 opacity-80" /> Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/profile')}>
-                  <Settings className="mr-2 h-4 w-4 opacity-80" /> Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/')}>
@@ -118,8 +132,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </DropdownMenu>
           </div>
         </header>
+
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-3 md:p-6">
           {children}
         </main>
       </div>

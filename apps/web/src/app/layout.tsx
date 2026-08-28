@@ -4,6 +4,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { AuthTokenProvider } from '@/components/providers/AuthTokenProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { Toaster } from 'sonner';
 import './globals.css';
 
 const geistSans = Geist({
@@ -36,6 +37,7 @@ export default function RootLayout({
           <ThemeProvider>
             <QueryProvider>
               <AuthTokenProvider>{children}</AuthTokenProvider>
+            <Toaster position="top-right" richColors closeButton />
             </QueryProvider>
           </ThemeProvider>
         </body>

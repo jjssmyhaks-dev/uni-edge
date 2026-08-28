@@ -82,51 +82,64 @@ export default function CoursesPage() {
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">No courses found</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Course Name</TableHead>
-                  <TableHead>Instructor</TableHead>
-                  <TableHead>Schedule</TableHead>
-                  <TableHead>Credits</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="space-y-3">
+              {/* Desktop: Table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Course Name</TableHead>
+                      <TableHead>Instructor</TableHead>
+                      <TableHead>Schedule</TableHead>
+                      <TableHead>Credits</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((course) => (
+                      <TableRow key={course.id} className="hover:bg-muted/50">
+                        <TableCell className="font-mono font-semibold text-sm">{course.course_code}</TableCell>
+                        <TableCell className="font-medium">{course.course_name}</TableCell>
+                        <TableCell className="text-muted-foreground">{course.instructor}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{course.schedule}</TableCell>
+                        <TableCell><Badge variant="secondary">{course.credits}</Badge></TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                            <Link href={`/dashboard/courses/${course.id}`}><ChevronRight className="h-4 w-4" /></Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {/* Mobile: Cards */}
+              <div className="space-y-3 md:hidden">
                 {filtered.map((course) => (
-                  <TableRow key={course.id} className="hover:bg-muted/50">
-                    <TableCell className="font-mono font-semibold text-sm">{course.course_code}</TableCell>
-                    <TableCell className="font-medium">{course.course_name}</TableCell>
-                    <TableCell className="text-muted-foreground">{course.instructor}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{course.schedule}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{course.credits}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={course.status === 'enrolled' ? 'default' : course.status === 'completed' ? 'outline' : 'destructive'}>
-                        {course.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                              <Link href={`/dashboard/courses/${course.id}`}>
-                                <ChevronRight className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>View Details</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </TableCell>
-                  </TableRow>
+                  <Link key={course.id} href={`/dashboard/courses/${course.id}`}>
+                    <div className="rounded-lg border p-4 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs shrink-0">
+                            {course.course_code.slice(0, 4)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{course.course_name}</p>
+                            <p className="text-xs text-muted-foreground">{course.instructor}</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
+                      </div>
+                      <div className="flex items-center gap-2 mt-3">
+                        <Badge variant="secondary" className="text-xs">{course.credits} credits</Badge>
+                        <span className="text-xs text-muted-foreground">{course.schedule}</span>
+                      </div>
+                    </div>
+                  </Link>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

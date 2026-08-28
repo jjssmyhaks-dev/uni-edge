@@ -63,9 +63,9 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight">
             Welcome back, {displayName}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -247,7 +247,7 @@ export default function AdminDashboardPage() {
             <CardDescription className="text-xs">Common admin tasks</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {[
                 { label: 'Create Exam', href: '/admin/exams/entrance/new', icon: <ClipboardList className="h-4 w-4" /> },
                 { label: 'Manage Programs', href: '/admin/programs', icon: <GraduationCap className="h-4 w-4" /> },

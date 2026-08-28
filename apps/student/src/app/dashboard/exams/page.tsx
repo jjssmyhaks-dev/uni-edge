@@ -86,51 +86,74 @@ export default function ExamsPage() {
           {upcoming.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">No upcoming exams</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Course</TableHead>
-                  <TableHead>Exam</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Venue</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div>
+              {/* Desktop: Table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Course</TableHead>
+                      <TableHead>Exam</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Time</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead>Venue</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {upcoming.map(exam => (
+                      <TableRow key={exam.id} className="hover:bg-muted/50">
+                        <TableCell className="font-mono text-sm font-semibold">{exam.course_code}</TableCell>
+                        <TableCell className="font-medium">{exam.exam_name}</TableCell>
+                        <TableCell>{getTypeBadge(exam.type)}</TableCell>
+                        <TableCell className="text-sm">{exam.date}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{exam.time}</TableCell>
+                        <TableCell className="text-sm">{exam.duration_minutes} min</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />{exam.venue}</div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {exam.hall_ticket_available && (
+                            <Button variant="outline" size="sm" className="h-8">
+                              <Download className="h-3.5 w-3.5 mr-1" />Hall Ticket
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {/* Mobile: Cards */}
+              <div className="space-y-3 md:hidden">
                 {upcoming.map(exam => (
-                  <TableRow key={exam.id} className="hover:bg-muted/50">
-                    <TableCell className="font-mono text-sm font-semibold">{exam.course_code}</TableCell>
-                    <TableCell className="font-medium">{exam.exam_name}</TableCell>
-                    <TableCell>{getTypeBadge(exam.type)}</TableCell>
-                    <TableCell className="text-sm">{exam.date}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{exam.time}</TableCell>
-                    <TableCell className="text-sm">{exam.duration_minutes} min</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />{exam.venue}
+                  <div key={exam.id} className="rounded-lg border p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono text-xs font-semibold text-muted-foreground">{exam.course_code}</span>
+                          {getTypeBadge(exam.type)}
+                        </div>
+                        <p className="font-medium text-sm">{exam.exam_name}</p>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <TooltipProvider>
-                        {exam.hall_ticket_available && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-8">
-                                <Download className="h-3.5 w-3.5 mr-1" />Hall Ticket
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Download hall ticket PDF</TooltipContent>
-                          </Tooltip>
-                        )}
-                      </TooltipProvider>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {exam.date}</div>
+                      <div className="flex items-center gap-1"><Clock className="h-3 w-3" /> {exam.time}</div>
+                      <div className="flex items-center gap-1"><Timer className="h-3 w-3" /> {exam.duration_minutes} min</div>
+                      <div className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {exam.venue}</div>
+                    </div>
+                    {exam.hall_ticket_available && (
+                      <Button variant="outline" size="sm" className="mt-3 w-full">
+                        <Download className="h-3.5 w-3.5 mr-1" />Download Hall Ticket
+                      </Button>
+                    )}
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

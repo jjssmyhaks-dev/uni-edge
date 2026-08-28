@@ -5,6 +5,7 @@ import { authMiddleware } from '../middleware/auth';
 import { requireRole, requireInstitutionAccess } from '../middleware/rbac';
 import { AppError } from '../middleware/errorHandler';
 import { qs, param } from '../lib/query';
+import { sendEmail, offerLetterEmail, gradePublishedEmail, feeReminderEmail, grievanceReplyEmail } from '../lib/email';
 
 const router = Router();
 router.use(authMiddleware);
@@ -406,6 +407,32 @@ router.post('/grades', requireInstitutionAccess, requireRole('institution_admin'
     .single();
 
   if (error) throw new AppError(500, 'DB_ERROR', error.message);
+
+  // Send email notification
+  try {
+    const { data: studentInfo } = await supabase
+      .from('students')
+      .select('users!students_user_id_fkey(full_name, email)')
+      .eq('id', student_id)
+      .single();
+    const { data: offeringInfo } = await supabase
+      .from('course_offerings')
+      .select('courses!course_offerings_course_id_fkey(course_name)')
+      .eq('id', course_offering_id)
+      .single();
+    const sInfo = studentInfo as Record<string, unknown> as { users?: { full_name: string; email: string } };
+    const oInfo = offeringInfo as Record<string, unknown> as { courses?: { course_name: string } };
+    if (sInfo?.users?.email && oInfo?.courses?.course_name) {
+      const emailData = gradePublishedEmail(
+        sInfo.users.full_name,
+        oInfo.courses.course_name,
+        letter_grade || '-',
+        grade_points || 0
+      );
+      await sendEmail({ to: sInfo.users.email, ...emailData });
+    }
+  } catch (e) { console.error('[Email] Grade notification failed:', e); }
+
   res.status(201).json({ data, error: null });
 });
 
@@ -595,6 +622,31 @@ router.post('/grievances/:id/replies', requireInstitutionAccess, async (req: Req
     .single();
 
   if (error) throw new AppError(500, 'DB_ERROR', error.message);
+
+  // Send email notification to student if admin replied
+  if (senderRole === 'admin') {
+    try {
+      const { data: grievance } = await supabase
+        .from('grievances')
+        .select('subject, students!grievances_student_id_fkey(id)')
+        .eq('id', grievanceId)
+        .single();
+      const g = grievance as Record<string, unknown> as { subject: string; students?: { id: string } };
+      if (g?.students?.id) {
+        const { data: studentUser } = await supabase
+          .from('students')
+          .select('users!students_user_id_fkey(full_name, email)')
+          .eq('id', g.students.id)
+          .single();
+        const sUser = studentUser as Record<string, unknown> as { users?: { full_name: string; email: string } };
+        if (sUser?.users?.email) {
+          const emailData = grievanceReplyEmail(sUser.users.full_name, g.subject, message);
+          await sendEmail({ to: sUser.users.email, ...emailData });
+        }
+      }
+    } catch (e) { console.error('[Email] Grievance reply notification failed:', e); }
+  }
+
   res.status(201).json({ data, error: null });
 });
 

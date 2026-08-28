@@ -9,6 +9,58 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { TrendingUp, Award, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { useGrades, calculateCGPA, type GradeEntry } from '@/lib/hooks/useGrades';
 
+function GradeCard({ entry }: { entry: GradeEntry }) {
+  const [open, setOpen] = useState(false);
+  const totalObtained = entry.assessments.reduce((s, a) => s + a.marks_obtained, 0);
+  const totalMax = entry.assessments.reduce((s, a) => s + a.max_marks, 0);
+
+  return (
+    <div className="rounded-lg border">
+      <button onClick={() => setOpen(!open)} className="w-full p-4 text-left hover:bg-muted/50 transition-colors">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-mono text-xs font-semibold text-muted-foreground">{entry.course_code}</span>
+              <Badge variant={entry.grade.startsWith('A') ? 'default' : entry.grade.startsWith('B') ? 'secondary' : 'outline'}>
+                {entry.grade}
+              </Badge>
+            </div>
+            <p className="font-medium text-sm">{entry.course_name}</p>
+            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+              <span>{entry.credits} credits</span>
+              <span>{entry.grade_points} pts</span>
+              <span>{totalObtained}/{totalMax}</span>
+            </div>
+          </div>
+          {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        </div>
+      </button>
+      {open && (
+        <div className="border-t p-4 bg-muted/20">
+          <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Assessment Breakdown</p>
+          <div className="space-y-2">
+            {entry.assessments.map(a => (
+              <div key={a.id} className="rounded-md border bg-card p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium">{a.name}</span>
+                  <Badge variant="outline" className="text-[10px]">{a.weightage}%</Badge>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-bold">{a.marks_obtained}</span>
+                  <span className="text-sm text-muted-foreground">/ {a.max_marks}</span>
+                </div>
+                <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${(a.marks_obtained / a.max_marks) * 100}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GradeRow({ entry }: { entry: GradeEntry }) {
   const [open, setOpen] = useState(false);
   const totalObtained = entry.assessments.reduce((s, a) => s + a.marks_obtained, 0);
@@ -131,24 +183,35 @@ export default function GradesPage() {
           ) : grades.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">No grades available yet</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Course</TableHead>
-                  <TableHead className="text-center">Credits</TableHead>
-                  <TableHead className="text-center">Grade</TableHead>
-                  <TableHead className="text-center">Grade Points</TableHead>
-                  <TableHead className="text-center">Marks</TableHead>
-                  <TableHead className="text-right w-[60px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div>
+              {/* Desktop: Table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Course</TableHead>
+                      <TableHead className="text-center">Credits</TableHead>
+                      <TableHead className="text-center">Grade</TableHead>
+                      <TableHead className="text-center">Grade Points</TableHead>
+                      <TableHead className="text-center">Marks</TableHead>
+                      <TableHead className="text-right w-[60px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {grades.map(entry => (
+                      <GradeRow key={entry.id} entry={entry} />
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {/* Mobile: Cards */}
+              <div className="space-y-3 md:hidden">
                 {grades.map(entry => (
-                  <GradeRow key={entry.id} entry={entry} />
+                  <GradeCard key={entry.id} entry={entry} />
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

@@ -36,6 +36,7 @@ import feeRoutes from './routes/fees';
 import examQuestionsRoutes from './routes/exam-questions';
 import examSubmissionsRoutes from './routes/exam-submissions';
 import meritListRoutes from './routes/merit-lists';
+import studentModuleRoutes from './routes/student-module';
 
 const app = express();
 
@@ -45,7 +46,10 @@ const app = express();
 
 app.use(helmet());
 app.use(cors({
-  origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  origin: [
+    process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    'http://localhost:3001',
+  ],
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -94,6 +98,9 @@ app.use(`${API_PREFIX}/fees`, feeRoutes);
 app.use(`${API_PREFIX}/exam-questions`, examQuestionsRoutes);
 app.use(`${API_PREFIX}/exam-submissions`, examSubmissionsRoutes);
 app.use(`${API_PREFIX}/merit-lists`, meritListRoutes);
+
+// Module 8: Student-Facing Application
+app.use(`${API_PREFIX}/student`, studentModuleRoutes);
 
 // ============================================
 // Error Handling

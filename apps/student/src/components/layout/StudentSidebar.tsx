@@ -32,6 +32,7 @@ const navSections: NavSection[] = [
     { label: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
     { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
     { label: 'Career Board', href: '/dashboard/career', icon: Briefcase },
+    { label: 'Grievances', href: '/dashboard/grievances', icon: HelpCircle },
   ]},
 ];
 

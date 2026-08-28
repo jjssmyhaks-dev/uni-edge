@@ -492,26 +492,36 @@ export default function ApplyPage() {
                       <label htmlFor={`upload-${doc.key}`} className="cursor-pointer block">
                         {formData.documents[doc.key] ? (
                           <div className="flex items-center justify-center gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                            <span className="text-sm font-medium truncate max-w-[200px]">
-                              {(formData.documents[doc.key] as File).name}
-                            </span>
+                            <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                            <div className="text-left min-w-0">
+                              <span className="text-sm font-medium truncate block max-w-[200px]">
+                                {(formData.documents[doc.key] as File).name}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {((formData.documents[doc.key] as File).size / 1024 / 1024).toFixed(1)} MB
+                              </span>
+                            </div>
                             <button
                               type="button"
                               onClick={(e) => { e.preventDefault(); updateDocument(doc.key, null); }}
-                              className="ml-1 p-0.5 rounded hover:bg-muted"
+                              className="ml-1 p-1 rounded hover:bg-muted"
                             >
                               <X className="h-3.5 w-3.5 text-muted-foreground" />
                             </button>
                           </div>
                         ) : uploadingDocs[doc.key] ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Uploading...</span>
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">Uploading...</span>
+                            </div>
+                            <div className="w-32 h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+                            </div>
                           </div>
                         ) : (
                           <>
-                            <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-1" />
+                            <FileText className="h-6 w-6 text-muted-foreground mx-auto mb-1" />
                             <p className="text-sm text-muted-foreground">Click to upload or drag and drop</p>
                             <p className="text-xs text-muted-foreground/70 mt-0.5">PDF, JPG, PNG (max 10MB)</p>
                           </>

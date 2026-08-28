@@ -6,6 +6,8 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { Separator } from '@/components/ui/separator';
 import { useCompleteOnboarding, useOnboardingStatus } from '@/lib/hooks/useOnboarding';
 import {
   Building2,
@@ -118,10 +120,8 @@ export default function OnboardingPage() {
             {/* Step 1: Institution Details */}
             {step === 1 && (
               <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">
-                    Institution Name <span className="text-destructive">*</span>
-                  </label>
+                <Field className="gap-2">
+                  <FieldLabel>Institution Name <span className="text-destructive">*</span></FieldLabel>
                   <Input
                     value={formData.institution_name}
                     onChange={(e) => updateField('institution_name', e.target.value)}
@@ -130,19 +130,19 @@ export default function OnboardingPage() {
                   {errors.institution_name && (
                     <p className="text-destructive text-xs mt-1">{errors.institution_name}</p>
                   )}
-                </div>
+                </Field>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Short Name</label>
+                  <Field className="gap-2">
+                    <FieldLabel>Short Name</FieldLabel>
                     <Input
                       value={formData.short_name}
                       onChange={(e) => updateField('short_name', e.target.value)}
                       placeholder="e.g. DTU"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Website</label>
+                  </Field>
+                  <Field className="gap-2">
+                    <FieldLabel>Website</FieldLabel>
                     <div className="relative">
                       <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -152,13 +152,13 @@ export default function OnboardingPage() {
                         className="pl-9"
                       />
                     </div>
-                  </div>
+                  </Field>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Institution Type <span className="text-destructive">*</span>
-                  </label>
+                <Separator className="my-4" />
+
+                <Field className="gap-2">
+                  <FieldLabel>Institution Type <span className="text-destructive">*</span></FieldLabel>
                   <div className="grid grid-cols-3 gap-2">
                     {institutionTypes.map(type => (
                       <button
@@ -179,10 +179,10 @@ export default function OnboardingPage() {
                   {errors.institution_type && (
                     <p className="text-destructive text-xs mt-1">{errors.institution_type}</p>
                   )}
-                </div>
+                </Field>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Address</label>
+                <Field className="gap-2">
+                  <FieldLabel>Address</FieldLabel>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -195,7 +195,7 @@ export default function OnboardingPage() {
                   {errors.address && (
                     <p className="text-destructive text-xs mt-1">{errors.address}</p>
                   )}
-                </div>
+                </Field>
               </div>
             )}
 

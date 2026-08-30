@@ -5,28 +5,22 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
-import { useCourses } from '@/lib/hooks/useCourses';
-
-const ATTENDANCE_DATA = [
-  { course_code: 'CS101', course_name: 'Introduction to Computer Science', total: 24, present: 22, absent: 2, percentage: 91.7 },
-  { course_code: 'MA101', course_name: 'Engineering Mathematics I', total: 24, present: 20, absent: 4, percentage: 83.3 },
-  { course_code: 'EE101', course_name: 'Basic Electronics', total: 24, present: 21, absent: 3, percentage: 87.5 },
-  { course_code: 'HS101', course_name: 'English Communication', total: 16, present: 15, absent: 1, percentage: 93.8 },
-  { course_code: 'PH101', course_name: 'Engineering Physics', total: 20, present: 18, absent: 2, percentage: 90.0 },
-];
-
-const overallPresent = ATTENDANCE_DATA.reduce((s, a) => s + a.present, 0);
-const overallTotal = ATTENDANCE_DATA.reduce((s, a) => s + a.total, 0);
-const overallPercent = Math.round((overallPresent / overallTotal) * 100 * 10) / 10;
+import { useAttendance, type AttendanceRecord } from '@/lib/hooks/useStudentData';
 
 function getAttendanceStatus(pct: number) {
-  if (pct >= 90) return { color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950', icon: CheckCircle2, label: 'Excellent' };
-  if (pct >= 75) return { color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950', icon: CheckCircle2, label: 'Good' };
-  if (pct >= 60) return { color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950', icon: AlertTriangle, label: 'Warning' };
-  return { color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-950', icon: XCircle, label: 'Critical' };
+  if (pct >= 90) return { color: 'text-emerald-600', icon: CheckCircle2, label: 'Excellent' };
+  if (pct >= 75) return { color: 'text-blue-600', icon: CheckCircle2, label: 'Good' };
+  if (pct >= 60) return { color: 'text-amber-600', icon: AlertTriangle, label: 'Warning' };
+  return { color: 'text-red-600', icon: XCircle, label: 'Critical' };
 }
 
 export default function AttendancePage() {
+  const { data: records = [], isLoading } = useAttendance();
+
+  const overallPresent = records.reduce((s, r) => s + r.present, 0);
+  const overallTotal = records.reduce((s, r) => s + r.total_classes, 0);
+  const overallPercent = overallTotal > 0 ? Math.round((overallPresent / overallTotal) * 100 * 10) / 10 : 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -62,48 +56,88 @@ export default function AttendancePage() {
           <CardTitle className="text-base">Course-wise Attendance</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Course</TableHead>
-                <TableHead>Total Classes</TableHead>
-                <TableHead>Present</TableHead>
-                <TableHead>Absent</TableHead>
-                <TableHead>Attendance</TableHead>
-                <TableHead className="text-right">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {ATTENDANCE_DATA.map(att => {
-                const status = getAttendanceStatus(att.percentage);
-                const StatusIcon = status.icon;
-                return (
-                  <TableRow key={att.course_code} className="hover:bg-muted/50">
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{att.course_name}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{att.course_code}</p>
+          {isLoading ? (
+            <div className="flex justify-center py-8"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
+          ) : records.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground">
+              <Calendar className="mx-auto mb-3 h-10 w-10 opacity-30" />
+              <p>No attendance records yet</p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Course</TableHead>
+                      <TableHead className="text-center">Total</TableHead>
+                      <TableHead className="text-center">Present</TableHead>
+                      <TableHead className="text-center">Absent</TableHead>
+                      <TableHead>Attendance</TableHead>
+                      <TableHead className="text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {records.map(rec => {
+                      const status = getAttendanceStatus(rec.percentage);
+                      const StatusIcon = status.icon;
+                      return (
+                        <TableRow key={rec.id} className="hover:bg-muted/50">
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{rec.course_name}</p>
+                              <p className="text-xs text-muted-foreground font-mono">{rec.course_code}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">{rec.total_classes}</TableCell>
+                          <TableCell className="text-center font-medium text-emerald-600">{rec.present}</TableCell>
+                          <TableCell className="text-center font-medium text-red-600">{rec.absent}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Progress value={rec.percentage} className="h-1.5 w-20" />
+                              <span className="text-sm font-medium">{rec.percentage}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge variant="outline" className={`${status.color} border-current/20`}>
+                              <StatusIcon className="mr-1 h-3 w-3" />{status.label}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              {/* Mobile */}
+              <div className="space-y-3 md:hidden">
+                {records.map(rec => {
+                  const status = getAttendanceStatus(rec.percentage);
+                  const StatusIcon = status.icon;
+                  return (
+                    <div key={rec.id} className="rounded-lg border p-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium text-sm">{rec.course_name}</p>
+                          <p className="text-xs text-muted-foreground font-mono">{rec.course_code}</p>
+                        </div>
+                        <Badge variant="outline" className={`text-xs ${status.color}`}>
+                          <StatusIcon className="mr-1 h-3 w-3" />{status.label}
+                        </Badge>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-center">{att.total}</TableCell>
-                    <TableCell className="text-center font-medium text-emerald-600">{att.present}</TableCell>
-                    <TableCell className="text-center font-medium text-red-600">{att.absent}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress value={att.percentage} className="h-1.5 w-20" />
-                        <span className="text-sm font-medium">{att.percentage}%</span>
+                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                        <span>Present: <span className="font-medium text-emerald-600">{rec.present}</span></span>
+                        <span>Absent: <span className="font-medium text-red-600">{rec.absent}</span></span>
+                        <span className="ml-auto font-medium">{rec.percentage}%</span>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant="outline" className={`${status.color} border-current/20`}>
-                        <StatusIcon className="mr-1 h-3 w-3" />{status.label}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      <Progress value={rec.percentage} className="h-1.5 mt-2" />
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

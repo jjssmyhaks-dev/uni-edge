@@ -1,27 +1,31 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Briefcase, Building2, MapPin, Calendar, ExternalLink, Clock } from 'lucide-react';
-
-const POSTINGS = [
-  { id: '1', title: 'Software Engineering Intern', company: 'Infosys', location: 'Pune (Hybrid)', type: 'Internship', stipend: '₹15,000/month', deadline: '2026-10-15', posted: '2026-09-15', description: '6-month internship in web development. Working with React, Node.js, and PostgreSQL.', skills: ['React', 'Node.js', 'SQL'] },
-  { id: '2', title: 'Data Analyst', company: 'TCS', location: 'Mumbai', type: 'Full-Time', stipend: '₹4.5 LPA', deadline: '2026-10-20', posted: '2026-09-18', description: 'Entry-level data analyst role. Work with large datasets, create dashboards, and support business decisions.', skills: ['Python', 'SQL', 'Excel'] },
-  { id: '3', title: 'Campus Ambassador', company: 'Google', location: 'Remote', type: 'Part-Time', stipend: '₹5,000/month + swags', deadline: '2026-10-05', posted: '2026-09-20', description: 'Represent Google on your campus. Organize events, workshops, and grow the developer community.', skills: ['Communication', 'Leadership'] },
-  { id: '4', title: 'Cloud Engineering Intern', company: 'Amazon Web Services', location: 'Hyderabad', type: 'Internship', stipend: '₹25,000/month', deadline: '2026-10-25', posted: '2026-09-22', description: 'Work on cloud infrastructure projects. Learn AWS services, automation, and distributed systems.', skills: ['AWS', 'Linux', 'Python'] },
-];
+import { useJobPostings, type JobPosting } from '@/lib/hooks/useExtras';
 
 function getTypeBadge(type: string) {
   switch (type) {
-    case 'Internship': return <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-0">Internship</Badge>;
-    case 'Full-Time': return <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-0">Full-Time</Badge>;
-    case 'Part-Time': return <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-400 border-0">Part-Time</Badge>;
+    case 'internship': return <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-0">Internship</Badge>;
+    case 'full_time': return <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-0">Full-Time</Badge>;
+    case 'part_time': return <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-400 border-0">Part-Time</Badge>;
+    case 'contract': return <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-0">Contract</Badge>;
     default: return <Badge variant="secondary">{type}</Badge>;
   }
 }
 
 export default function CareerPage() {
+  const { data: postings = [], isLoading } = useJobPostings();
+
+  const companies = new Set(postings.map(p => p.company_name)).size;
+  const closingSoon = postings.filter(p => {
+    if (!p.deadline) return false;
+    const daysUntil = (new Date(p.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    return daysUntil > 0 && daysUntil <= 7;
+  }).length;
+
   return (
     <div className="space-y-6">
       <div>
@@ -37,7 +41,7 @@ export default function CareerPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Open Positions</p>
-              <p className="text-2xl font-bold">{POSTINGS.length}</p>
+              <p className="text-2xl font-bold">{postings.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -48,7 +52,7 @@ export default function CareerPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Companies</p>
-              <p className="text-2xl font-bold">{new Set(POSTINGS.map(p => p.company)).size}</p>
+              <p className="text-2xl font-bold">{companies}</p>
             </div>
           </CardContent>
         </Card>
@@ -59,43 +63,67 @@ export default function CareerPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Closing Soon</p>
-              <p className="text-2xl font-bold">1</p>
+              <p className="text-2xl font-bold">{closingSoon}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="space-y-4">
-        {POSTINGS.map(posting => (
-          <Card key={posting.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold text-lg">{posting.title}</h3>
-                    {getTypeBadge(posting.type)}
+      {isLoading ? (
+        <div className="flex justify-center py-12"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
+      ) : postings.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <Briefcase className="mx-auto mb-3 h-10 w-10 opacity-30" />
+            <p>No job postings available yet</p>
+            <p className="text-xs mt-1">Check back later for opportunities from our placement cell</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {postings.map(posting => (
+            <Card key={posting.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold text-lg">{posting.title}</h3>
+                      {getTypeBadge(posting.job_type)}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
+                      <span className="flex items-center gap-1"><Building2 className="h-3.5 w-3.5" />{posting.company_name}</span>
+                      {posting.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{posting.location}</span>}
+                      {posting.is_remote && <Badge variant="outline" className="text-xs">Remote</Badge>}
+                      {posting.deadline && <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />Deadline: {posting.deadline}</span>}
+                      {posting.salary_range && <span className="font-semibold text-foreground">{posting.salary_range}</span>}
+                    </div>
+                    {posting.description && <p className="text-sm text-muted-foreground mb-3">{posting.description}</p>}
+                    {posting.required_skills && posting.required_skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {posting.required_skills.map(s => (
+                          <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
+                        ))}
+                      </div>
+                    )}
+                    {posting.eligibility && (
+                      <p className="text-xs text-muted-foreground mt-2">Eligibility: {posting.eligibility}</p>
+                    )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
-                    <span className="flex items-center gap-1"><Building2 className="h-3.5 w-3.5" />{posting.company}</span>
-                    <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{posting.location}</span>
-                    <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />Deadline: {posting.deadline}</span>
-                    <span className="font-semibold text-foreground">{posting.stipend}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">{posting.description}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {posting.skills.map(s => (
-                      <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
-                    ))}
+                  <div className="shrink-0 space-y-2">
+                    {posting.application_link && (
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={posting.application_link} target="_blank" rel="noopener noreferrer">
+                          Apply <ExternalLink className="h-3.5 w-3.5 ml-1" />
+                        </a>
+                      </Button>
+                    )}
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="shrink-0">
-                  Apply <ExternalLink className="h-3.5 w-3.5 ml-1" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

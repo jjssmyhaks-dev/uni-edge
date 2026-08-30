@@ -54,10 +54,13 @@ export function useAttendance() {
 export interface DocumentRequest {
   id: string;
   type: string;
+  document_type?: string;
   status: 'requested' | 'processing' | 'ready' | 'issued';
   requested_at: string;
+  created_at: string;
   issued_at?: string;
   file_url?: string;
+  purpose?: string;
 }
 
 export function useDocumentRequests() {

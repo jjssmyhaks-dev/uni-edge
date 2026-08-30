@@ -3,22 +3,35 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, BookOpen, Clock, Users, FileText, Download, ExternalLink } from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock, Users, FileText, Download } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCourses } from '@/lib/hooks/useCourses';
-
-const ANNOUNCEMENTS = [
-  { id: '1', title: 'Assignment 3 Released', content: 'Problem Set 3 has been uploaded. Due date: Sep 25.', date: '2026-09-15', type: 'assignment' },
-  { id: '2', title: 'Mid-Term Exam Date Confirmed', content: 'The mid-term exam will be held on Oct 5, 2026 in Hall A.', date: '2026-09-10', type: 'exam' },
-  { id: '3', title: 'Lab Session Rescheduled', content: 'This week\'s lab session moved to Thursday 3-6 PM due to faculty leave.', date: '2026-09-08', type: 'schedule' },
-];
+import { useCourseAnnouncements, useCourseMaterials, type CourseAnnouncement, type CourseMaterial } from '@/lib/hooks/useExtras';
 
 export default function CourseDetailPage() {
   const params = useParams();
-  const { data: courses = [] } = useCourses();
+  const { data: courses = [], isLoading } = useCourses();
   const course = courses.find(c => c.id === params.id);
+
+  // For now, fetch announcements and materials without course_offering_id
+  // (will be wired to specific offering once enrollment data links them)
+  const { data: allAnnouncements = [] } = useCourseAnnouncements();
+  const { data: allMaterials = [] } = useCourseMaterials();
+
+  // Filter announcements/materials relevant to this course
+  const announcements = allAnnouncements.filter(a =>
+    a.course_offerings?.courses?.course_code === course?.course_code
+  );
+  const materials = allMaterials.filter(() => false); // Will filter by offering once linked
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   if (!course) {
     return (
@@ -84,18 +97,23 @@ export default function CourseDetailPage() {
             <CardTitle className="text-base">Announcements</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {ANNOUNCEMENTS.map(a => (
-                <div key={a.id} className="rounded-lg border p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="outline" className="text-[10px]">{a.type}</Badge>
-                    <span className="text-xs text-muted-foreground">{a.date}</span>
+            {announcements.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">No announcements for this course</p>
+            ) : (
+              <div className="space-y-3">
+                {announcements.map(a => (
+                  <div key={a.id} className="rounded-lg border p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline" className="text-[10px] capitalize">{a.scope}</Badge>
+                      <span className="text-xs text-muted-foreground">{new Date(a.published_at).toLocaleDateString('en-IN')}</span>
+                      {a.is_pinned && <Badge className="text-[10px] bg-primary/10 text-primary border-0">Pinned</Badge>}
+                    </div>
+                    <p className="font-medium text-sm">{a.title}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{a.content}</p>
                   </div>
-                  <p className="font-medium text-sm">{a.title}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{a.content}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -105,28 +123,28 @@ export default function CourseDetailPage() {
             <CardTitle className="text-base">Materials</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {[
-                { name: 'Course Syllabus', type: 'pdf', size: '245 KB' },
-                { name: 'Lecture Notes - Week 1', type: 'pdf', size: '1.2 MB' },
-                { name: 'Lecture Notes - Week 2', type: 'pdf', size: '980 KB' },
-                { name: 'Problem Set 1', type: 'pdf', size: '320 KB' },
-                { name: 'Problem Set 2', type: 'pdf', size: '290 KB' },
-              ].map((file, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg border p-2.5 hover:bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{file.name}</span>
+            {materials.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">No materials uploaded yet</p>
+            ) : (
+              <div className="space-y-2">
+                {materials.map((file) => (
+                  <div key={file.id} className="flex items-center justify-between rounded-lg border p-2.5 hover:bg-muted/50">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm truncate">{file.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {file.file_size && <span className="text-xs text-muted-foreground">{(file.file_size / 1024).toFixed(0)} KB</span>}
+                      <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                        <a href={file.file_url} target="_blank" rel="noopener noreferrer">
+                          <Download className="h-3.5 w-3.5" />
+                        </a>
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{file.size}</span>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <Download className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

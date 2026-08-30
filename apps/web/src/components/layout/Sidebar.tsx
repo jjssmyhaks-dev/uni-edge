@@ -89,6 +89,7 @@ const navSections: NavSection[] = [
       { label: 'Exams', href: '/admin/exams', icon: ClipboardList, roles: ['super_admin', 'institution_admin', 'exam_committee'] },
       { label: 'Attendance', href: '/admin/attendance', icon: ClipboardCheck, roles: ['super_admin', 'institution_admin', 'faculty', 'staff'] },
       { label: 'Proctoring', href: '/admin/exams/proctoring', icon: Camera, roles: ['super_admin', 'institution_admin', 'exam_committee'] },
+      { label: 'Questions', href: '/admin/exams/questions', icon: FileText, roles: ['super_admin', 'institution_admin', 'exam_committee'] },
     ],
   },
   {

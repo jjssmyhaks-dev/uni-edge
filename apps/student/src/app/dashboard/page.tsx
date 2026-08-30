@@ -15,6 +15,7 @@ import { useAssignments } from '@/lib/hooks/useAssignments';
 import { useExams } from '@/lib/hooks/useExams';
 import { useFees } from '@/lib/hooks/useFees';
 import { useNotifications } from '@/lib/hooks/useNotifications';
+import { useDashboardRealtime, useNotificationPermission } from '@/lib/hooks/useRealtime';
 
 export default function StudentDashboard() {
   const { data: courses = [] } = useCourses();
@@ -23,6 +24,10 @@ export default function StudentDashboard() {
   const { data: exams = [] } = useExams();
   const { data: fees = [] } = useFees();
   const { data: notifications = [] } = useNotifications();
+
+  // Real-time subscriptions
+  const { toastMessage } = useDashboardRealtime(null); // studentId resolved server-side
+  const { permission, requestPermission } = useNotificationPermission();
 
   const cgpa = calculateCGPA(grades);
   const pendingAssignments = assignments.filter(a => a.status === 'pending').length;
@@ -43,6 +48,21 @@ export default function StudentDashboard() {
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">Welcome back! Here&apos;s your academic overview.</p>
       </div>
+
+      {/* Real-time Toast */}
+      {toastMessage && (
+        <div className="fixed top-4 right-4 z-50 rounded-lg border bg-card p-3 shadow-lg animate-in slide-in-from-right">
+          <p className="text-sm font-medium">{toastMessage}</p>
+        </div>
+      )}
+
+      {/* Notification Permission Banner */}
+      {permission === 'default' && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-center justify-between">
+          <p className="text-sm">Enable browser notifications to get instant updates on grades, exams, and messages.</p>
+          <Button size="sm" onClick={requestPermission}>Enable</Button>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">

@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Calendar, Clock, MapPin, Download, Timer } from 'lucide-react';
+import Link from 'next/link';
+import { Calendar, Clock, MapPin, Download, Timer, Play } from 'lucide-react';
 import { useExams } from '@/lib/hooks/useExams';
 
 function getTypeBadge(type: string) {
@@ -115,11 +116,18 @@ export default function ExamsPage() {
                           <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />{exam.venue}</div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {exam.hall_ticket_available && (
-                            <Button variant="outline" size="sm" className="h-8">
-                              <Download className="h-3.5 w-3.5 mr-1" />Hall Ticket
-                            </Button>
-                          )}
+                          <div className="flex items-center justify-end gap-1">
+                            <Link href={`/exam-take?examId=${exam.id}`}>
+                              <Button size="sm" className="h-8">
+                                <Play className="h-3.5 w-3.5 mr-1" />Take Exam
+                              </Button>
+                            </Link>
+                            {exam.hall_ticket_available && (
+                              <Button variant="outline" size="sm" className="h-8">
+                                <Download className="h-3.5 w-3.5 mr-1" />Hall Ticket
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -145,11 +153,18 @@ export default function ExamsPage() {
                       <div className="flex items-center gap-1"><Timer className="h-3 w-3" /> {exam.duration_minutes} min</div>
                       <div className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {exam.venue}</div>
                     </div>
-                    {exam.hall_ticket_available && (
-                      <Button variant="outline" size="sm" className="mt-3 w-full">
-                        <Download className="h-3.5 w-3.5 mr-1" />Download Hall Ticket
-                      </Button>
-                    )}
+                    <div className="flex gap-2 mt-3">
+                      <Link href={`/exam-take?examId=${exam.id}`} className="flex-1">
+                        <Button size="sm" className="w-full">
+                          <Play className="h-3.5 w-3.5 mr-1" />Take Exam
+                        </Button>
+                      </Link>
+                      {exam.hall_ticket_available && (
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <Download className="h-3.5 w-3.5 mr-1" />Hall Ticket
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

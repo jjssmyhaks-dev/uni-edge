@@ -103,6 +103,7 @@ const navSections: NavSection[] = [
       { label: 'Assistant', href: '/admin/assistant', icon: Bell },
       { label: 'Notices', href: '/admin/notices', icon: Bell },
       { label: 'Doc Requests', href: '/admin/document-requests', icon: FileCheck, roles: ['super_admin', 'institution_admin', 'staff'] },
+      { label: 'Grievances', href: '/admin/grievances', icon: HelpCircle, roles: ['super_admin', 'institution_admin', 'staff', 'faculty'] },
     ],
   },
   {

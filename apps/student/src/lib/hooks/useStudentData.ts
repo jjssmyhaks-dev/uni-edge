@@ -19,15 +19,7 @@ export function useCalendarEvents() {
   return useQuery<CalendarEvent[]>({
     queryKey: ['student-calendar'],
     queryFn: () => apiClient.get('/api/v1/student/calendar'),
-    placeholderData: () => [
-      { id: '1', title: 'Semester 1 End-Term Exams Begin', date: '2026-12-01', type: 'exam', description: 'End-semester examination period starts.' },
-      { id: '2', title: 'Diwali Holiday', date: '2026-10-20', type: 'holiday', description: 'College closed for Diwali celebrations.' },
-      { id: '3', title: 'Assignment 3 Due', date: '2026-09-25', type: 'deadline', description: 'Lab Report: Diode Characteristics due.' },
-      { id: '4', title: 'Semester 2 Registration Opens', date: '2026-11-15', type: 'registration', description: 'Course registration for Semester 2 begins.' },
-      { id: '5', title: 'Annual Tech Fest', date: '2026-11-10', type: 'event', description: 'Annual technical festival of the college.' },
-      { id: '6', title: 'Mid-Term Exams', date: '2026-10-01', type: 'exam', description: 'Mid-semester examination period.' },
-      { id: '7', title: 'Republic Day Holiday', date: '2027-01-26', type: 'holiday', description: 'College closed for Republic Day.' },
-    ],
+    placeholderData: () => [],
   });
 }
 
@@ -51,32 +43,7 @@ export function useAttendance() {
   return useQuery<AttendanceRecord[]>({
     queryKey: ['student-attendance'],
     queryFn: () => apiClient.get('/api/v1/student/attendance'),
-    placeholderData: () => [
-      {
-        id: '1', course_code: 'CS101', course_name: 'Introduction to Computer Science',
-        total_classes: 20, present: 18, absent: 1, excused: 1, percentage: 90,
-        records: Array.from({ length: 20 }, (_, i) => ({
-          date: `2026-08-${String(i + 1).padStart(2, '0')}`,
-          status: i === 5 ? 'absent' : i === 12 ? 'excused' : i === 8 ? 'late' : 'present',
-        })),
-      },
-      {
-        id: '2', course_code: 'MA101', course_name: 'Engineering Mathematics I',
-        total_classes: 20, present: 16, absent: 3, excused: 1, percentage: 80,
-        records: Array.from({ length: 20 }, (_, i) => ({
-          date: `2026-08-${String(i + 1).padStart(2, '0')}`,
-          status: i === 3 || i === 9 || i === 15 ? 'absent' : i === 18 ? 'excused' : 'present',
-        })),
-      },
-      {
-        id: '3', course_code: 'EE101', course_name: 'Basic Electronics',
-        total_classes: 20, present: 19, absent: 0, excused: 1, percentage: 95,
-        records: Array.from({ length: 20 }, (_, i) => ({
-          date: `2026-08-${String(i + 1).padStart(2, '0')}`,
-          status: i === 14 ? 'excused' : 'present',
-        })),
-      },
-    ],
+    placeholderData: () => [],
   });
 }
 
@@ -99,10 +66,7 @@ export function useDocumentRequests() {
   const query = useQuery<DocumentRequest[]>({
     queryKey: ['student-documents'],
     queryFn: () => apiClient.get('/api/v1/student/document-requests'),
-    placeholderData: () => [
-      { id: '1', type: 'Transcript', status: 'issued', requested_at: '2026-08-10', issued_at: '2026-08-15', file_url: '#' },
-      { id: '2', type: 'Bonafide Certificate', status: 'processing', requested_at: '2026-08-20' },
-    ],
+    placeholderData: () => [],
   });
 
   const requestDocument = useMutation({
@@ -145,20 +109,7 @@ export function useGrievances() {
   const query = useQuery<Grievance[]>({
     queryKey: ['student-grievances'],
     queryFn: () => apiClient.get('/api/v1/student/grievances'),
-    placeholderData: () => [
-      {
-        id: '1',
-        subject: 'Grade discrepancy in MA101 Mid-Term',
-        description: 'I believe there is an error in the grading of my mid-term exam for MA101. My calculated marks should be higher.',
-        category: 'academic',
-        priority: 'normal',
-        status: 'in_review',
-        created_at: '2026-08-15T10:00:00Z',
-        replies: [
-          { id: 'r1', message: 'We have received your grievance and are reviewing the exam papers. You will hear from us within 5 working days.', sender_role: 'admin', sender_name: 'Exam Committee', created_at: '2026-08-16T14:30:00Z' },
-        ],
-      },
-    ],
+    placeholderData: () => [],
   });
 
   const createGrievance = useMutation({

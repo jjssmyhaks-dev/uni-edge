@@ -818,6 +818,363 @@ router.patch('/institution-settings', requireInstitutionAccess, requireRole('ins
 // STUDENT DASHBOARD STATS
 // ============================================
 
+// ============================================
+// STUDENT PROFILE
+// ============================================
+
+router.get('/profile', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const { data: student, error } = await supabase
+    .from('students')
+    .select('*, programs(name, code), departments(name), users!students_user_id_fkey(full_name, email, clerk_user_id)')
+    .eq('clerk_user_id', req.user!.sub)
+    .single();
+
+  if (error || !student) throw new AppError(404, 'NOT_FOUND', 'Student profile not found');
+  if (req.user!.role !== 'super_admin' && student.institution_id !== req.user!.institution_id) {
+    throw new AppError(403, 'FORBIDDEN', 'Access denied');
+  }
+
+  res.json({ data: student, error: null });
+});
+
+// ============================================
+// STUDENT FEES
+// ============================================
+
+router.get('/fees', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const { data: student } = await supabase
+    .from('students')
+    .select('id')
+    .eq('clerk_user_id', req.user!.sub)
+    .single();
+
+  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student record not found');
+
+  const { data, error } = await supabase
+    .from('fee_invoices')
+    .select('*')
+    .eq('student_id', student.id)
+    .eq('institution_id', req.user!.institution_id!)
+    .order('due_date', { ascending: false });
+
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  res.json({ data: data || [], error: null });
+});
+
+router.get('/payments', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const { data: student } = await supabase
+    .from('students')
+    .select('id')
+    .eq('clerk_user_id', req.user!.sub)
+    .single();
+
+  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student record not found');
+
+  const { data, error } = await supabase
+    .from('fee_payments')
+    .select('*')
+    .eq('student_id', student.id)
+    .eq('institution_id', req.user!.institution_id!)
+    .order('payment_date', { ascending: false });
+
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  res.json({ data: data || [], error: null });
+});
+
+router.post('/payments', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const { data: student } = await supabase
+    .from('students')
+    .select('id')
+    .eq('clerk_user_id', req.user!.sub)
+    .single();
+
+  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student record not found');
+
+  const { data, error } = await supabase
+    .from('fee_payments')
+    .insert({
+      ...req.body,
+      student_id: student.id,
+      institution_id: req.user!.institution_id!,
+      status: 'pending',
+    })
+    .select()
+    .single();
+
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  res.status(201).json({ data, error: null });
+});
+
+// ============================================
+// STUDENT ATTENDANCE
+// ============================================
+
+router.get('/attendance', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const { data: student } = await supabase
+    .from('students')
+    .select('id')
+    .eq('clerk_user_id', req.user!.sub)
+    .single();
+
+  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student record not found');
+
+  const { data, error } = await supabase
+    .from('attendance_records')
+    .select('*, course_offerings(courses(course_name, course_code))')
+    .eq('student_id', student.id)
+    .eq('institution_id', req.user!.institution_id!)
+    .order('date', { ascending: false });
+
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  res.json({ data: data || [], error: null });
+});
+
+// ============================================
+// STUDENT DOCUMENT REQUESTS
+// ============================================
+
+router.get('/document-requests', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const { data: student } = await supabase
+    .from('students')
+    .select('id')
+    .eq('clerk_user_id', req.user!.sub)
+    .single();
+
+  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student record not found');
+
+  const { data, error } = await supabase
+    .from('document_requests')
+    .select('*')
+    .eq('student_id', student.id)
+    .eq('institution_id', req.user!.institution_id!)
+    .order('created_at', { ascending: false });
+
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  res.json({ data: data || [], error: null });
+});
+
+router.post('/document-requests', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const { data: student } = await supabase
+    .from('students')
+    .select('id')
+    .eq('clerk_user_id', req.user!.sub)
+    .single();
+
+  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student record not found');
+
+  const { data, error } = await supabase
+    .from('document_requests')
+    .insert({
+      student_id: student.id,
+      institution_id: req.user!.institution_id!,
+      document_type: req.body.type,
+      purpose: req.body.purpose,
+      status: 'requested',
+    })
+    .select()
+    .single();
+
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  res.status(201).json({ data, error: null });
+});
+
+// ============================================
+// STUDENT CALENDAR
+// ============================================
+
+router.get('/calendar', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const { data: student } = await supabase
+    .from('students')
+    .select('id, program_id')
+    .eq('clerk_user_id', req.user!.sub)
+    .single();
+
+  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student record not found');
+
+  // Fetch semesters, exams, deadlines, notices as calendar events
+  const [semesters, exams, notices] = await Promise.all([
+    supabase
+      .from('semesters')
+      .select('id, term_label, start_date, end_date, registration_start, registration_end')
+      .eq('program_id', student.program_id)
+      .order('start_date'),
+    supabase
+      .from('entrance_exams')
+      .select('id, name, exam_date, online_config')
+      .eq('institution_id', req.user!.institution_id!)
+      .order('exam_date'),
+    supabase
+      .from('notices')
+      .select('id, title, notice_date, notice_type')
+      .eq('institution_id', req.user!.institution_id!)
+      .order('notice_date', { ascending: false })
+      .limit(20),
+  ]);
+
+  const events: Array<{ id: string; title: string; date: string; type: string; description?: string }> = [];
+
+  (semesters.data || []).forEach(s => {
+    events.push({ id: `sem-start-${s.id}`, title: `${s.term_label} Begins`, date: s.start_date, type: 'event' });
+    events.push({ id: `sem-end-${s.id}`, title: `${s.term_label} Ends`, date: s.end_date, type: 'event' });
+    if (s.registration_start) events.push({ id: `reg-${s.id}`, title: `${s.term_label} Registration Opens`, date: s.registration_start, type: 'registration' });
+    if (s.registration_end) events.push({ id: `reg-end-${s.id}`, title: `${s.term_label} Registration Closes`, date: s.registration_end, type: 'deadline' });
+  });
+
+  (exams.data || []).forEach(e => {
+    events.push({ id: `exam-${e.id}`, title: e.name, date: e.exam_date, type: 'exam' });
+  });
+
+  (notices.data || []).forEach(n => {
+    events.push({ id: `notice-${n.id}`, title: n.title, date: n.notice_date, type: 'event', description: n.notice_type });
+  });
+
+  events.sort((a, b) => a.date.localeCompare(b.date));
+  res.json({ data: events, error: null });
+});
+
+// ============================================
+// STUDENT EXAMS (Regular exams for enrolled courses)
+// ============================================
+
+router.get('/exams', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const { data: student } = await supabase
+    .from('students')
+    .select('id')
+    .eq('clerk_user_id', req.user!.sub)
+    .single();
+
+  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student record not found');
+
+  // Get enrolled course offerings
+  const { data: enrollments } = await supabase
+    .from('enrollments')
+    .select('course_offering_id')
+    .eq('student_id', student.id)
+    .eq('status', 'enrolled');
+
+  const offeringIds = (enrollments || []).map((e: any) => e.course_offering_id);
+  if (offeringIds.length === 0) return res.json({ data: [], error: null });
+
+  const { data, error } = await supabase
+    .from('regular_exams')
+    .select('*, course_offerings!inner(id, courses(course_name, course_code), semesters(term_label))')
+    .in('course_offering_id', offeringIds)
+    .eq('institution_id', req.user!.institution_id!)
+    .order('exam_date', { ascending: false });
+
+  if (error) throw new AppError(500, 'DB_ERROR', error.message);
+  res.json({ data: data || [], error: null });
+});
+
+// ============================================
+// STUDENT REGISTRATION
+// ============================================
+
+router.get('/registration', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const { data: student } = await supabase
+    .from('students')
+    .select('id, program_id')
+    .eq('clerk_user_id', req.user!.sub)
+    .single();
+
+  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student record not found');
+
+  // Get current/upcoming semester with registration window
+  const { data: semester } = await supabase
+    .from('semesters')
+    .select('*')
+    .eq('program_id', student.program_id)
+    .in('status', ['upcoming', 'registration_open'])
+    .order('start_date')
+    .limit(1)
+    .single();
+
+  // Get available course offerings for that semester
+  let courses: any[] = [];
+  if (semester) {
+    const { data: offerings } = await supabase
+      .from('course_offerings')
+      .select('*, courses(*), users!course_offerings_instructor_id_fkey(full_name)')
+      .eq('semester_id', semester.id)
+      .eq('institution_id', req.user!.institution_id!)
+      .eq('is_active', true);
+    courses = offerings || [];
+  }
+
+  res.json({
+    data: {
+      window: semester ? {
+        id: semester.id,
+        semester: semester.term_label,
+        start_date: semester.registration_start,
+        end_date: semester.registration_end,
+        status: semester.status === 'registration_open' ? 'open' : 'upcoming',
+        min_credits: 14,
+        max_credits: 22,
+        flexible_mode: false,
+      } : null,
+      courses: courses.map((c: any) => ({
+        id: c.id,
+        course_code: c.courses?.course_code,
+        course_name: c.courses?.course_name,
+        instructor: c.users?.full_name,
+        credits: c.courses?.credits,
+        capacity: c.capacity,
+        enrolled: c.enrolled_count || 0,
+        prerequisites: [],
+        department: '',
+        type: c.courses?.course_type || 'core',
+        is_selected: false,
+      })),
+    },
+    error: null,
+  });
+});
+
+router.post('/registration/enroll', requireInstitutionAccess, async (req: Request, res: Response) => {
+  const { course_offering_id } = req.body;
+  const { data: student } = await supabase
+    .from('students')
+    .select('id')
+    .eq('clerk_user_id', req.user!.sub)
+    .single();
+
+  if (!student) throw new AppError(404, 'NOT_FOUND', 'Student record not found');
+
+  // Check capacity
+  const { data: offering } = await supabase
+    .from('course_offerings')
+    .select('capacity, enrolled_count')
+    .eq('id', course_offering_id)
+    .single();
+
+  if (offering && offering.enrolled_count >= offering.capacity) {
+    throw new AppError(400, 'FULL', 'Course is full');
+  }
+
+  const { data, error } = await supabase
+    .from('enrollments')
+    .insert({
+      student_id: student.id,
+      course_offering_id,
+      institution_id: req.user!.institution_id!,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    if (error.code === '23505') throw new AppError(409, 'ALREADY_ENROLLED', 'Already enrolled');
+    throw new AppError(500, 'DB_ERROR', error.message);
+  }
+
+  await supabase
+    .from('course_offerings')
+    .update({ enrolled_count: (offering?.enrolled_count || 0) + 1 })
+    .eq('id', course_offering_id);
+
+  res.status(201).json({ data, error: null });
+});
+
 router.get('/student/dashboard', requireInstitutionAccess, async (req: Request, res: Response) => {
   // Get student ID
   const { data: student } = await supabase
